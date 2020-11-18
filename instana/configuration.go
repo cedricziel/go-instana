@@ -83,7 +83,7 @@ func NewConfiguration() *Configuration {
 	cfg := &Configuration{
 		BasePath:      "https://unit-tenant.instana.io",
 		DefaultHeader: make(map[string]string),
-		UserAgent:     "OpenAPI-Generator/1.168.278/go",
+		UserAgent:     "OpenAPI-Generator/1.190.696/go",
 		Debug:         false,
 		Servers: []ServerConfiguration{
 			{
