@@ -30,7 +30,7 @@ jobs:
         fi
 
     - name: Build
-      run: go build -v instana
+      run: cd instana && go build -v .
 
     - name: Test
-      run: go test -v instana
+      run: cd instana && go test -v .
