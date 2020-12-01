@@ -1,18 +1,18 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
+
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
 
 package instana
 
 import (
 	_context "context"
-	"github.com/antihax/optional"
 	_ioutil "io/ioutil"
 	_nethttp "net/http"
 	_neturl "net/url"
@@ -26,13 +26,32 @@ var (
 // ApplicationCatalogApiService ApplicationCatalogApi service
 type ApplicationCatalogApiService service
 
+type ApiGetApplicationCatalogMetricsRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationCatalogApiService
+}
+
+func (r ApiGetApplicationCatalogMetricsRequest) Execute() ([]MetricDescription, *_nethttp.Response, error) {
+	return r.ApiService.GetApplicationCatalogMetricsExecute(r)
+}
+
 /*
-GetApplicationCatalogMetrics Get Metric catalog
-This endpoint retrieves all available metric definitions for application monitoring.
+ * GetApplicationCatalogMetrics Get Metric catalog
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-@return []MetricDescription
-*/
-func (a *ApplicationCatalogApiService) GetApplicationCatalogMetrics(ctx _context.Context) ([]MetricDescription, *_nethttp.Response, error) {
+ * @return ApiGetApplicationCatalogMetricsRequest
+ */
+func (a *ApplicationCatalogApiService) GetApplicationCatalogMetrics(ctx _context.Context) ApiGetApplicationCatalogMetricsRequest {
+	return ApiGetApplicationCatalogMetricsRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []MetricDescription
+ */
+func (a *ApplicationCatalogApiService) GetApplicationCatalogMetricsExecute(r ApiGetApplicationCatalogMetricsRequest) ([]MetricDescription, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -42,8 +61,13 @@ func (a *ApplicationCatalogApiService) GetApplicationCatalogMetrics(ctx _context
 		localVarReturnValue  []MetricDescription
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/catalog/metrics"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationCatalogApiService.GetApplicationCatalogMetrics")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/catalog/metrics"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
@@ -65,24 +89,26 @@ func (a *ApplicationCatalogApiService) GetApplicationCatalogMetrics(ctx _context
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -120,21 +146,48 @@ func (a *ApplicationCatalogApiService) GetApplicationCatalogMetrics(ctx _context
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-// GetApplicationTagCatalogOpts Optional parameters for the method 'GetApplicationTagCatalog'
-type GetApplicationTagCatalogOpts struct {
-	From       optional.Int64
-	DataSource optional.String
+type ApiGetApplicationTagCatalogRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationCatalogApiService
+	from       *int64
+	dataSource *string
+	useCase    *string
+}
+
+func (r ApiGetApplicationTagCatalogRequest) From(from int64) ApiGetApplicationTagCatalogRequest {
+	r.from = &from
+	return r
+}
+func (r ApiGetApplicationTagCatalogRequest) DataSource(dataSource string) ApiGetApplicationTagCatalogRequest {
+	r.dataSource = &dataSource
+	return r
+}
+func (r ApiGetApplicationTagCatalogRequest) UseCase(useCase string) ApiGetApplicationTagCatalogRequest {
+	r.useCase = &useCase
+	return r
+}
+
+func (r ApiGetApplicationTagCatalogRequest) Execute() (TagCatalog, *_nethttp.Response, error) {
+	return r.ApiService.GetApplicationTagCatalogExecute(r)
 }
 
 /*
-GetApplicationTagCatalog Get application tag catalog
+ * GetApplicationTagCatalog Get application tag catalog
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *GetApplicationTagCatalogOpts - Optional Parameters:
- * @param "From" (optional.Int64) -
- * @param "DataSource" (optional.String) -
-@return TagCatalog
-*/
-func (a *ApplicationCatalogApiService) GetApplicationTagCatalog(ctx _context.Context, localVarOptionals *GetApplicationTagCatalogOpts) (TagCatalog, *_nethttp.Response, error) {
+ * @return ApiGetApplicationTagCatalogRequest
+ */
+func (a *ApplicationCatalogApiService) GetApplicationTagCatalog(ctx _context.Context) ApiGetApplicationTagCatalogRequest {
+	return ApiGetApplicationTagCatalogRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return TagCatalog
+ */
+func (a *ApplicationCatalogApiService) GetApplicationTagCatalogExecute(r ApiGetApplicationTagCatalogRequest) (TagCatalog, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -144,17 +197,25 @@ func (a *ApplicationCatalogApiService) GetApplicationTagCatalog(ctx _context.Con
 		localVarReturnValue  TagCatalog
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/catalog"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationCatalogApiService.GetApplicationTagCatalog")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/catalog"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
 
-	if localVarOptionals != nil && localVarOptionals.From.IsSet() {
-		localVarQueryParams.Add("from", parameterToString(localVarOptionals.From.Value(), ""))
+	if r.from != nil {
+		localVarQueryParams.Add("from", parameterToString(*r.from, ""))
 	}
-	if localVarOptionals != nil && localVarOptionals.DataSource.IsSet() {
-		localVarQueryParams.Add("dataSource", parameterToString(localVarOptionals.DataSource.Value(), ""))
+	if r.dataSource != nil {
+		localVarQueryParams.Add("dataSource", parameterToString(*r.dataSource, ""))
+	}
+	if r.useCase != nil {
+		localVarQueryParams.Add("useCase", parameterToString(*r.useCase, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -173,24 +234,26 @@ func (a *ApplicationCatalogApiService) GetApplicationTagCatalog(ctx _context.Con
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -228,20 +291,48 @@ func (a *ApplicationCatalogApiService) GetApplicationTagCatalog(ctx _context.Con
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-// GetApplicationTagsOpts Optional parameters for the method 'GetApplicationTags'
-type GetApplicationTagsOpts struct {
-	From optional.Int64
+type ApiGetApplicationTagsRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationCatalogApiService
+	from       *int64
+	dataSource *string
+	useCase    *string
+}
+
+func (r ApiGetApplicationTagsRequest) From(from int64) ApiGetApplicationTagsRequest {
+	r.from = &from
+	return r
+}
+func (r ApiGetApplicationTagsRequest) DataSource(dataSource string) ApiGetApplicationTagsRequest {
+	r.dataSource = &dataSource
+	return r
+}
+func (r ApiGetApplicationTagsRequest) UseCase(useCase string) ApiGetApplicationTagsRequest {
+	r.useCase = &useCase
+	return r
+}
+
+func (r ApiGetApplicationTagsRequest) Execute() ([]Tag, *_nethttp.Response, error) {
+	return r.ApiService.GetApplicationTagsExecute(r)
 }
 
 /*
-GetApplicationTags Get application tags
-This endpoint retrieves all available tags for your monitored system.  These tags can be used to group metric results. &#x60;&#x60;&#x60; \&quot;group\&quot;: {   \&quot;groupbyTag\&quot;: \&quot;service.name\&quot; } &#x60;&#x60;&#x60;  These tags can be used to filter metric results. &#x60;&#x60;&#x60; \&quot;tagFilters\&quot;: [{  \&quot;name\&quot;: \&quot;application.name\&quot;,  \&quot;operator\&quot;: \&quot;EQUALS\&quot;,  \&quot;value\&quot;: \&quot;example\&quot; }] &#x60;&#x60;&#x60;
+ * GetApplicationTags Get application tags
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *GetApplicationTagsOpts - Optional Parameters:
- * @param "From" (optional.Int64) -
-@return []Tag
-*/
-func (a *ApplicationCatalogApiService) GetApplicationTags(ctx _context.Context, localVarOptionals *GetApplicationTagsOpts) ([]Tag, *_nethttp.Response, error) {
+ * @return ApiGetApplicationTagsRequest
+ */
+func (a *ApplicationCatalogApiService) GetApplicationTags(ctx _context.Context) ApiGetApplicationTagsRequest {
+	return ApiGetApplicationTagsRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []Tag
+ */
+func (a *ApplicationCatalogApiService) GetApplicationTagsExecute(r ApiGetApplicationTagsRequest) ([]Tag, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -251,14 +342,25 @@ func (a *ApplicationCatalogApiService) GetApplicationTags(ctx _context.Context, 
 		localVarReturnValue  []Tag
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/catalog/tags"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationCatalogApiService.GetApplicationTags")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/catalog/tags"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
 
-	if localVarOptionals != nil && localVarOptionals.From.IsSet() {
-		localVarQueryParams.Add("from", parameterToString(localVarOptionals.From.Value(), ""))
+	if r.from != nil {
+		localVarQueryParams.Add("from", parameterToString(*r.from, ""))
+	}
+	if r.dataSource != nil {
+		localVarQueryParams.Add("dataSource", parameterToString(*r.dataSource, ""))
+	}
+	if r.useCase != nil {
+		localVarQueryParams.Add("useCase", parameterToString(*r.useCase, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -277,24 +379,26 @@ func (a *ApplicationCatalogApiService) GetApplicationTags(ctx _context.Context, 
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}

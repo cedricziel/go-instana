@@ -11,26 +11,49 @@ Method | HTTP request | Description
 
 ## GetBeaconMetrics
 
-> WebsiteMetricResult GetBeaconMetrics(ctx, optional)
+> WebsiteMetricResult GetBeaconMetrics(ctx).GetWebsiteMetrics(getWebsiteMetrics).Execute()
 
 Get beacon metrics
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    getWebsiteMetrics := *openapiclient.NewGetWebsiteMetrics([]openapiclient.WebsiteMonitoringMetricsConfiguration{*openapiclient.NewWebsiteMonitoringMetricsConfiguration("Metric_example", "Aggregation_example")}, "Type_example") // GetWebsiteMetrics |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.WebsiteMetricsApi.GetBeaconMetrics(context.Background()).GetWebsiteMetrics(getWebsiteMetrics).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `WebsiteMetricsApi.GetBeaconMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetBeaconMetrics`: WebsiteMetricResult
+    fmt.Fprintf(os.Stdout, "Response from `WebsiteMetricsApi.GetBeaconMetrics`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetBeaconMetricsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetBeaconMetricsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetBeaconMetricsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **getWebsiteMetrics** | [**optional.Interface of GetWebsiteMetrics**](GetWebsiteMetrics.md)|  | 
+ **getWebsiteMetrics** | [**GetWebsiteMetrics**](GetWebsiteMetrics.md) |  | 
 
 ### Return type
 
@@ -52,18 +75,56 @@ Name | Type | Description  | Notes
 
 ## GetPageLoad
 
-> []WebsiteMonitoringBeacon GetPageLoad(ctx, id, timestamp)
+> []WebsiteMonitoringBeacon GetPageLoad(ctx, id, timestamp).Execute()
 
 Get page load
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    id := "id_example" // string | 
+    timestamp := int64(789) // int64 | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.WebsiteMetricsApi.GetPageLoad(context.Background(), id, timestamp).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `WebsiteMetricsApi.GetPageLoad``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetPageLoad`: []WebsiteMonitoringBeacon
+    fmt.Fprintf(os.Stdout, "Response from `WebsiteMetricsApi.GetPageLoad`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string**|  | 
-**timestamp** | **int64**|  | 
+**id** | **string** |  | 
+**timestamp** | **int64** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetPageLoadRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
 
 ### Return type
 

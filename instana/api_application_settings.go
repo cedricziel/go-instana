@@ -1,12 +1,13 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
+
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
 
 package instana
 
@@ -26,13 +27,38 @@ var (
 // ApplicationSettingsApiService ApplicationSettingsApi service
 type ApplicationSettingsApiService service
 
+type ApiAddApplicationConfigRequest struct {
+	ctx                  _context.Context
+	ApiService           *ApplicationSettingsApiService
+	newApplicationConfig *NewApplicationConfig
+}
+
+func (r ApiAddApplicationConfigRequest) NewApplicationConfig(newApplicationConfig NewApplicationConfig) ApiAddApplicationConfigRequest {
+	r.newApplicationConfig = &newApplicationConfig
+	return r
+}
+
+func (r ApiAddApplicationConfigRequest) Execute() (ApplicationConfig, *_nethttp.Response, error) {
+	return r.ApiService.AddApplicationConfigExecute(r)
+}
+
 /*
-AddApplicationConfig Add application configuration
+ * AddApplicationConfig Add application configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param newApplicationConfig
-@return ApplicationConfig
-*/
-func (a *ApplicationSettingsApiService) AddApplicationConfig(ctx _context.Context, newApplicationConfig NewApplicationConfig) (ApplicationConfig, *_nethttp.Response, error) {
+ * @return ApiAddApplicationConfigRequest
+ */
+func (a *ApplicationSettingsApiService) AddApplicationConfig(ctx _context.Context) ApiAddApplicationConfigRequest {
+	return ApiAddApplicationConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return ApplicationConfig
+ */
+func (a *ApplicationSettingsApiService) AddApplicationConfigExecute(r ApiAddApplicationConfigRequest) (ApplicationConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPost
 		localVarPostBody     interface{}
@@ -42,11 +68,19 @@ func (a *ApplicationSettingsApiService) AddApplicationConfig(ctx _context.Contex
 		localVarReturnValue  ApplicationConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/application"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.AddApplicationConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/application"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.newApplicationConfig == nil {
+		return localVarReturnValue, nil, reportError("newApplicationConfig is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -66,25 +100,27 @@ func (a *ApplicationSettingsApiService) AddApplicationConfig(ctx _context.Contex
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &newApplicationConfig
-	if ctx != nil {
+	localVarPostBody = r.newApplicationConfig
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -122,13 +158,38 @@ func (a *ApplicationSettingsApiService) AddApplicationConfig(ctx _context.Contex
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiAddServiceConfigRequest struct {
+	ctx           _context.Context
+	ApiService    *ApplicationSettingsApiService
+	serviceConfig *ServiceConfig
+}
+
+func (r ApiAddServiceConfigRequest) ServiceConfig(serviceConfig ServiceConfig) ApiAddServiceConfigRequest {
+	r.serviceConfig = &serviceConfig
+	return r
+}
+
+func (r ApiAddServiceConfigRequest) Execute() (ServiceConfig, *_nethttp.Response, error) {
+	return r.ApiService.AddServiceConfigExecute(r)
+}
+
 /*
-AddServiceConfig Add service configuration
+ * AddServiceConfig Add service configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param serviceConfig
-@return ServiceConfig
-*/
-func (a *ApplicationSettingsApiService) AddServiceConfig(ctx _context.Context, serviceConfig ServiceConfig) (ServiceConfig, *_nethttp.Response, error) {
+ * @return ApiAddServiceConfigRequest
+ */
+func (a *ApplicationSettingsApiService) AddServiceConfig(ctx _context.Context) ApiAddServiceConfigRequest {
+	return ApiAddServiceConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return ServiceConfig
+ */
+func (a *ApplicationSettingsApiService) AddServiceConfigExecute(r ApiAddServiceConfigRequest) (ServiceConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPost
 		localVarPostBody     interface{}
@@ -138,11 +199,19 @@ func (a *ApplicationSettingsApiService) AddServiceConfig(ctx _context.Context, s
 		localVarReturnValue  ServiceConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/service"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.AddServiceConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/service"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.serviceConfig == nil {
+		return localVarReturnValue, nil, reportError("serviceConfig is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -162,25 +231,27 @@ func (a *ApplicationSettingsApiService) AddServiceConfig(ctx _context.Context, s
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &serviceConfig
-	if ctx != nil {
+	localVarPostBody = r.serviceConfig
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -218,13 +289,38 @@ func (a *ApplicationSettingsApiService) AddServiceConfig(ctx _context.Context, s
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiCreateEndpointConfigRequest struct {
+	ctx                _context.Context
+	ApiService         *ApplicationSettingsApiService
+	httpEndpointConfig *HttpEndpointConfig
+}
+
+func (r ApiCreateEndpointConfigRequest) HttpEndpointConfig(httpEndpointConfig HttpEndpointConfig) ApiCreateEndpointConfigRequest {
+	r.httpEndpointConfig = &httpEndpointConfig
+	return r
+}
+
+func (r ApiCreateEndpointConfigRequest) Execute() (HttpEndpointConfig, *_nethttp.Response, error) {
+	return r.ApiService.CreateEndpointConfigExecute(r)
+}
+
 /*
-CreateEndpointConfig Create endpoint configuration
+ * CreateEndpointConfig Create endpoint configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param httpEndpointConfig
-@return HttpEndpointConfig
-*/
-func (a *ApplicationSettingsApiService) CreateEndpointConfig(ctx _context.Context, httpEndpointConfig HttpEndpointConfig) (HttpEndpointConfig, *_nethttp.Response, error) {
+ * @return ApiCreateEndpointConfigRequest
+ */
+func (a *ApplicationSettingsApiService) CreateEndpointConfig(ctx _context.Context) ApiCreateEndpointConfigRequest {
+	return ApiCreateEndpointConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return HttpEndpointConfig
+ */
+func (a *ApplicationSettingsApiService) CreateEndpointConfigExecute(r ApiCreateEndpointConfigRequest) (HttpEndpointConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPost
 		localVarPostBody     interface{}
@@ -234,11 +330,19 @@ func (a *ApplicationSettingsApiService) CreateEndpointConfig(ctx _context.Contex
 		localVarReturnValue  HttpEndpointConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/http-endpoint"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.CreateEndpointConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/http-endpoint"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.httpEndpointConfig == nil {
+		return localVarReturnValue, nil, reportError("httpEndpointConfig is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -258,25 +362,27 @@ func (a *ApplicationSettingsApiService) CreateEndpointConfig(ctx _context.Contex
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &httpEndpointConfig
-	if ctx != nil {
+	localVarPostBody = r.httpEndpointConfig
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -314,12 +420,34 @@ func (a *ApplicationSettingsApiService) CreateEndpointConfig(ctx _context.Contex
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiDeleteApplicationConfigRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+	id         string
+}
+
+func (r ApiDeleteApplicationConfigRequest) Execute() (*_nethttp.Response, error) {
+	return r.ApiService.DeleteApplicationConfigExecute(r)
+}
+
 /*
-DeleteApplicationConfig Delete application configuration
+ * DeleteApplicationConfig Delete application configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
-*/
-func (a *ApplicationSettingsApiService) DeleteApplicationConfig(ctx _context.Context, id string) (*_nethttp.Response, error) {
+ * @return ApiDeleteApplicationConfigRequest
+ */
+func (a *ApplicationSettingsApiService) DeleteApplicationConfig(ctx _context.Context, id string) ApiDeleteApplicationConfigRequest {
+	return ApiDeleteApplicationConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ */
+func (a *ApplicationSettingsApiService) DeleteApplicationConfigExecute(r ApiDeleteApplicationConfigRequest) (*_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodDelete
 		localVarPostBody     interface{}
@@ -328,9 +456,13 @@ func (a *ApplicationSettingsApiService) DeleteApplicationConfig(ctx _context.Con
 		localVarFileBytes    []byte
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/application/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.DeleteApplicationConfig")
+	if err != nil {
+		return nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/application/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -353,24 +485,26 @@ func (a *ApplicationSettingsApiService) DeleteApplicationConfig(ctx _context.Con
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarHTTPResponse, err
 	}
@@ -392,12 +526,34 @@ func (a *ApplicationSettingsApiService) DeleteApplicationConfig(ctx _context.Con
 	return localVarHTTPResponse, nil
 }
 
+type ApiDeleteEndpointConfigRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+	id         string
+}
+
+func (r ApiDeleteEndpointConfigRequest) Execute() (*_nethttp.Response, error) {
+	return r.ApiService.DeleteEndpointConfigExecute(r)
+}
+
 /*
-DeleteEndpointConfig Delete endpoint configuration
+ * DeleteEndpointConfig Delete endpoint configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
-*/
-func (a *ApplicationSettingsApiService) DeleteEndpointConfig(ctx _context.Context, id string) (*_nethttp.Response, error) {
+ * @return ApiDeleteEndpointConfigRequest
+ */
+func (a *ApplicationSettingsApiService) DeleteEndpointConfig(ctx _context.Context, id string) ApiDeleteEndpointConfigRequest {
+	return ApiDeleteEndpointConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ */
+func (a *ApplicationSettingsApiService) DeleteEndpointConfigExecute(r ApiDeleteEndpointConfigRequest) (*_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodDelete
 		localVarPostBody     interface{}
@@ -406,9 +562,13 @@ func (a *ApplicationSettingsApiService) DeleteEndpointConfig(ctx _context.Contex
 		localVarFileBytes    []byte
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/http-endpoint/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.DeleteEndpointConfig")
+	if err != nil {
+		return nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/http-endpoint/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -431,24 +591,26 @@ func (a *ApplicationSettingsApiService) DeleteEndpointConfig(ctx _context.Contex
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarHTTPResponse, err
 	}
@@ -470,12 +632,34 @@ func (a *ApplicationSettingsApiService) DeleteEndpointConfig(ctx _context.Contex
 	return localVarHTTPResponse, nil
 }
 
+type ApiDeleteServiceConfigRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+	id         string
+}
+
+func (r ApiDeleteServiceConfigRequest) Execute() (*_nethttp.Response, error) {
+	return r.ApiService.DeleteServiceConfigExecute(r)
+}
+
 /*
-DeleteServiceConfig Delete service configuration
+ * DeleteServiceConfig Delete service configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
-*/
-func (a *ApplicationSettingsApiService) DeleteServiceConfig(ctx _context.Context, id string) (*_nethttp.Response, error) {
+ * @return ApiDeleteServiceConfigRequest
+ */
+func (a *ApplicationSettingsApiService) DeleteServiceConfig(ctx _context.Context, id string) ApiDeleteServiceConfigRequest {
+	return ApiDeleteServiceConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ */
+func (a *ApplicationSettingsApiService) DeleteServiceConfigExecute(r ApiDeleteServiceConfigRequest) (*_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodDelete
 		localVarPostBody     interface{}
@@ -484,9 +668,13 @@ func (a *ApplicationSettingsApiService) DeleteServiceConfig(ctx _context.Context
 		localVarFileBytes    []byte
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/service/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.DeleteServiceConfig")
+	if err != nil {
+		return nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/service/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -509,24 +697,26 @@ func (a *ApplicationSettingsApiService) DeleteServiceConfig(ctx _context.Context
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarHTTPResponse, err
 	}
@@ -548,13 +738,35 @@ func (a *ApplicationSettingsApiService) DeleteServiceConfig(ctx _context.Context
 	return localVarHTTPResponse, nil
 }
 
+type ApiGetApplicationConfigRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+	id         string
+}
+
+func (r ApiGetApplicationConfigRequest) Execute() (ApplicationConfig, *_nethttp.Response, error) {
+	return r.ApiService.GetApplicationConfigExecute(r)
+}
+
 /*
-GetApplicationConfig Application configuration
+ * GetApplicationConfig Application configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
-@return ApplicationConfig
-*/
-func (a *ApplicationSettingsApiService) GetApplicationConfig(ctx _context.Context, id string) (ApplicationConfig, *_nethttp.Response, error) {
+ * @return ApiGetApplicationConfigRequest
+ */
+func (a *ApplicationSettingsApiService) GetApplicationConfig(ctx _context.Context, id string) ApiGetApplicationConfigRequest {
+	return ApiGetApplicationConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return ApplicationConfig
+ */
+func (a *ApplicationSettingsApiService) GetApplicationConfigExecute(r ApiGetApplicationConfigRequest) (ApplicationConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -564,9 +776,13 @@ func (a *ApplicationSettingsApiService) GetApplicationConfig(ctx _context.Contex
 		localVarReturnValue  ApplicationConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/application/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.GetApplicationConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/application/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -589,24 +805,26 @@ func (a *ApplicationSettingsApiService) GetApplicationConfig(ctx _context.Contex
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -644,12 +862,32 @@ func (a *ApplicationSettingsApiService) GetApplicationConfig(ctx _context.Contex
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiGetApplicationConfigsRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+}
+
+func (r ApiGetApplicationConfigsRequest) Execute() ([]ApplicationConfig, *_nethttp.Response, error) {
+	return r.ApiService.GetApplicationConfigsExecute(r)
+}
+
 /*
-GetApplicationConfigs All Application configurations
+ * GetApplicationConfigs All Application configurations
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-@return []ApplicationConfig
-*/
-func (a *ApplicationSettingsApiService) GetApplicationConfigs(ctx _context.Context) ([]ApplicationConfig, *_nethttp.Response, error) {
+ * @return ApiGetApplicationConfigsRequest
+ */
+func (a *ApplicationSettingsApiService) GetApplicationConfigs(ctx _context.Context) ApiGetApplicationConfigsRequest {
+	return ApiGetApplicationConfigsRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []ApplicationConfig
+ */
+func (a *ApplicationSettingsApiService) GetApplicationConfigsExecute(r ApiGetApplicationConfigsRequest) ([]ApplicationConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -659,8 +897,13 @@ func (a *ApplicationSettingsApiService) GetApplicationConfigs(ctx _context.Conte
 		localVarReturnValue  []ApplicationConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/application"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.GetApplicationConfigs")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/application"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
@@ -682,24 +925,26 @@ func (a *ApplicationSettingsApiService) GetApplicationConfigs(ctx _context.Conte
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -737,13 +982,35 @@ func (a *ApplicationSettingsApiService) GetApplicationConfigs(ctx _context.Conte
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiGetEndpointConfigRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+	id         string
+}
+
+func (r ApiGetEndpointConfigRequest) Execute() (HttpEndpointConfig, *_nethttp.Response, error) {
+	return r.ApiService.GetEndpointConfigExecute(r)
+}
+
 /*
-GetEndpointConfig Endpoint configuration
+ * GetEndpointConfig Endpoint configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
-@return HttpEndpointConfig
-*/
-func (a *ApplicationSettingsApiService) GetEndpointConfig(ctx _context.Context, id string) (HttpEndpointConfig, *_nethttp.Response, error) {
+ * @return ApiGetEndpointConfigRequest
+ */
+func (a *ApplicationSettingsApiService) GetEndpointConfig(ctx _context.Context, id string) ApiGetEndpointConfigRequest {
+	return ApiGetEndpointConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return HttpEndpointConfig
+ */
+func (a *ApplicationSettingsApiService) GetEndpointConfigExecute(r ApiGetEndpointConfigRequest) (HttpEndpointConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -753,9 +1020,13 @@ func (a *ApplicationSettingsApiService) GetEndpointConfig(ctx _context.Context, 
 		localVarReturnValue  HttpEndpointConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/http-endpoint/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.GetEndpointConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/http-endpoint/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -778,24 +1049,26 @@ func (a *ApplicationSettingsApiService) GetEndpointConfig(ctx _context.Context, 
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -833,12 +1106,32 @@ func (a *ApplicationSettingsApiService) GetEndpointConfig(ctx _context.Context, 
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiGetEndpointConfigsRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+}
+
+func (r ApiGetEndpointConfigsRequest) Execute() ([]HttpEndpointConfig, *_nethttp.Response, error) {
+	return r.ApiService.GetEndpointConfigsExecute(r)
+}
+
 /*
-GetEndpointConfigs All Endpoint configurations
+ * GetEndpointConfigs All Endpoint configurations
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-@return []HttpEndpointConfig
-*/
-func (a *ApplicationSettingsApiService) GetEndpointConfigs(ctx _context.Context) ([]HttpEndpointConfig, *_nethttp.Response, error) {
+ * @return ApiGetEndpointConfigsRequest
+ */
+func (a *ApplicationSettingsApiService) GetEndpointConfigs(ctx _context.Context) ApiGetEndpointConfigsRequest {
+	return ApiGetEndpointConfigsRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []HttpEndpointConfig
+ */
+func (a *ApplicationSettingsApiService) GetEndpointConfigsExecute(r ApiGetEndpointConfigsRequest) ([]HttpEndpointConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -848,8 +1141,13 @@ func (a *ApplicationSettingsApiService) GetEndpointConfigs(ctx _context.Context)
 		localVarReturnValue  []HttpEndpointConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/http-endpoint"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.GetEndpointConfigs")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/http-endpoint"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
@@ -871,24 +1169,26 @@ func (a *ApplicationSettingsApiService) GetEndpointConfigs(ctx _context.Context)
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -926,13 +1226,35 @@ func (a *ApplicationSettingsApiService) GetEndpointConfigs(ctx _context.Context)
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiGetServiceConfigRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+	id         string
+}
+
+func (r ApiGetServiceConfigRequest) Execute() (ServiceConfig, *_nethttp.Response, error) {
+	return r.ApiService.GetServiceConfigExecute(r)
+}
+
 /*
-GetServiceConfig Service configuration
+ * GetServiceConfig Service configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
-@return ServiceConfig
-*/
-func (a *ApplicationSettingsApiService) GetServiceConfig(ctx _context.Context, id string) (ServiceConfig, *_nethttp.Response, error) {
+ * @return ApiGetServiceConfigRequest
+ */
+func (a *ApplicationSettingsApiService) GetServiceConfig(ctx _context.Context, id string) ApiGetServiceConfigRequest {
+	return ApiGetServiceConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return ServiceConfig
+ */
+func (a *ApplicationSettingsApiService) GetServiceConfigExecute(r ApiGetServiceConfigRequest) (ServiceConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -942,9 +1264,13 @@ func (a *ApplicationSettingsApiService) GetServiceConfig(ctx _context.Context, i
 		localVarReturnValue  ServiceConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/service/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.GetServiceConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/service/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -967,24 +1293,26 @@ func (a *ApplicationSettingsApiService) GetServiceConfig(ctx _context.Context, i
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1022,12 +1350,32 @@ func (a *ApplicationSettingsApiService) GetServiceConfig(ctx _context.Context, i
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiGetServiceConfigsRequest struct {
+	ctx        _context.Context
+	ApiService *ApplicationSettingsApiService
+}
+
+func (r ApiGetServiceConfigsRequest) Execute() ([]ServiceConfig, *_nethttp.Response, error) {
+	return r.ApiService.GetServiceConfigsExecute(r)
+}
+
 /*
-GetServiceConfigs All service configurations
+ * GetServiceConfigs All service configurations
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-@return []ServiceConfig
-*/
-func (a *ApplicationSettingsApiService) GetServiceConfigs(ctx _context.Context) ([]ServiceConfig, *_nethttp.Response, error) {
+ * @return ApiGetServiceConfigsRequest
+ */
+func (a *ApplicationSettingsApiService) GetServiceConfigs(ctx _context.Context) ApiGetServiceConfigsRequest {
+	return ApiGetServiceConfigsRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []ServiceConfig
+ */
+func (a *ApplicationSettingsApiService) GetServiceConfigsExecute(r ApiGetServiceConfigsRequest) ([]ServiceConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -1037,8 +1385,13 @@ func (a *ApplicationSettingsApiService) GetServiceConfigs(ctx _context.Context) 
 		localVarReturnValue  []ServiceConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/service"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.GetServiceConfigs")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/service"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
@@ -1060,24 +1413,26 @@ func (a *ApplicationSettingsApiService) GetServiceConfigs(ctx _context.Context) 
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1115,12 +1470,37 @@ func (a *ApplicationSettingsApiService) GetServiceConfigs(ctx _context.Context) 
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiOrderServiceConfigRequest struct {
+	ctx         _context.Context
+	ApiService  *ApplicationSettingsApiService
+	requestBody *[]string
+}
+
+func (r ApiOrderServiceConfigRequest) RequestBody(requestBody []string) ApiOrderServiceConfigRequest {
+	r.requestBody = &requestBody
+	return r
+}
+
+func (r ApiOrderServiceConfigRequest) Execute() (*_nethttp.Response, error) {
+	return r.ApiService.OrderServiceConfigExecute(r)
+}
+
 /*
-OrderServiceConfig Order of service configuration
+ * OrderServiceConfig Order of service configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param requestBody
-*/
-func (a *ApplicationSettingsApiService) OrderServiceConfig(ctx _context.Context, requestBody []string) (*_nethttp.Response, error) {
+ * @return ApiOrderServiceConfigRequest
+ */
+func (a *ApplicationSettingsApiService) OrderServiceConfig(ctx _context.Context) ApiOrderServiceConfigRequest {
+	return ApiOrderServiceConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ */
+func (a *ApplicationSettingsApiService) OrderServiceConfigExecute(r ApiOrderServiceConfigRequest) (*_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPut
 		localVarPostBody     interface{}
@@ -1129,11 +1509,19 @@ func (a *ApplicationSettingsApiService) OrderServiceConfig(ctx _context.Context,
 		localVarFileBytes    []byte
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/service/order"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.OrderServiceConfig")
+	if err != nil {
+		return nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/service/order"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.requestBody == nil {
+		return nil, reportError("requestBody is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -1153,25 +1541,27 @@ func (a *ApplicationSettingsApiService) OrderServiceConfig(ctx _context.Context,
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &requestBody
-	if ctx != nil {
+	localVarPostBody = r.requestBody
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarHTTPResponse, err
 	}
@@ -1193,14 +1583,41 @@ func (a *ApplicationSettingsApiService) OrderServiceConfig(ctx _context.Context,
 	return localVarHTTPResponse, nil
 }
 
+type ApiPutApplicationConfigRequest struct {
+	ctx               _context.Context
+	ApiService        *ApplicationSettingsApiService
+	id                string
+	applicationConfig *ApplicationConfig
+}
+
+func (r ApiPutApplicationConfigRequest) ApplicationConfig(applicationConfig ApplicationConfig) ApiPutApplicationConfigRequest {
+	r.applicationConfig = &applicationConfig
+	return r
+}
+
+func (r ApiPutApplicationConfigRequest) Execute() (ApplicationConfig, *_nethttp.Response, error) {
+	return r.ApiService.PutApplicationConfigExecute(r)
+}
+
 /*
-PutApplicationConfig Update application configuration
+ * PutApplicationConfig Update application configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
- * @param applicationConfig
-@return ApplicationConfig
-*/
-func (a *ApplicationSettingsApiService) PutApplicationConfig(ctx _context.Context, id string, applicationConfig ApplicationConfig) (ApplicationConfig, *_nethttp.Response, error) {
+ * @return ApiPutApplicationConfigRequest
+ */
+func (a *ApplicationSettingsApiService) PutApplicationConfig(ctx _context.Context, id string) ApiPutApplicationConfigRequest {
+	return ApiPutApplicationConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return ApplicationConfig
+ */
+func (a *ApplicationSettingsApiService) PutApplicationConfigExecute(r ApiPutApplicationConfigRequest) (ApplicationConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPut
 		localVarPostBody     interface{}
@@ -1210,13 +1627,20 @@ func (a *ApplicationSettingsApiService) PutApplicationConfig(ctx _context.Contex
 		localVarReturnValue  ApplicationConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/application/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.PutApplicationConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/application/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.applicationConfig == nil {
+		return localVarReturnValue, nil, reportError("applicationConfig is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -1236,25 +1660,27 @@ func (a *ApplicationSettingsApiService) PutApplicationConfig(ctx _context.Contex
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &applicationConfig
-	if ctx != nil {
+	localVarPostBody = r.applicationConfig
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1292,14 +1718,41 @@ func (a *ApplicationSettingsApiService) PutApplicationConfig(ctx _context.Contex
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiPutServiceConfigRequest struct {
+	ctx           _context.Context
+	ApiService    *ApplicationSettingsApiService
+	id            string
+	serviceConfig *ServiceConfig
+}
+
+func (r ApiPutServiceConfigRequest) ServiceConfig(serviceConfig ServiceConfig) ApiPutServiceConfigRequest {
+	r.serviceConfig = &serviceConfig
+	return r
+}
+
+func (r ApiPutServiceConfigRequest) Execute() (ServiceConfig, *_nethttp.Response, error) {
+	return r.ApiService.PutServiceConfigExecute(r)
+}
+
 /*
-PutServiceConfig Update service configuration
+ * PutServiceConfig Update service configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
- * @param serviceConfig
-@return ServiceConfig
-*/
-func (a *ApplicationSettingsApiService) PutServiceConfig(ctx _context.Context, id string, serviceConfig ServiceConfig) (ServiceConfig, *_nethttp.Response, error) {
+ * @return ApiPutServiceConfigRequest
+ */
+func (a *ApplicationSettingsApiService) PutServiceConfig(ctx _context.Context, id string) ApiPutServiceConfigRequest {
+	return ApiPutServiceConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return ServiceConfig
+ */
+func (a *ApplicationSettingsApiService) PutServiceConfigExecute(r ApiPutServiceConfigRequest) (ServiceConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPut
 		localVarPostBody     interface{}
@@ -1309,13 +1762,20 @@ func (a *ApplicationSettingsApiService) PutServiceConfig(ctx _context.Context, i
 		localVarReturnValue  ServiceConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/service/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.PutServiceConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/service/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.serviceConfig == nil {
+		return localVarReturnValue, nil, reportError("serviceConfig is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -1335,25 +1795,27 @@ func (a *ApplicationSettingsApiService) PutServiceConfig(ctx _context.Context, i
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &serviceConfig
-	if ctx != nil {
+	localVarPostBody = r.serviceConfig
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1391,13 +1853,38 @@ func (a *ApplicationSettingsApiService) PutServiceConfig(ctx _context.Context, i
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiReplaceAllRequest struct {
+	ctx           _context.Context
+	ApiService    *ApplicationSettingsApiService
+	serviceConfig *[]ServiceConfig
+}
+
+func (r ApiReplaceAllRequest) ServiceConfig(serviceConfig []ServiceConfig) ApiReplaceAllRequest {
+	r.serviceConfig = &serviceConfig
+	return r
+}
+
+func (r ApiReplaceAllRequest) Execute() ([]ServiceConfig, *_nethttp.Response, error) {
+	return r.ApiService.ReplaceAllExecute(r)
+}
+
 /*
-ReplaceAll Replace all service configurations
+ * ReplaceAll Replace all service configurations
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param serviceConfig
-@return []ServiceConfig
-*/
-func (a *ApplicationSettingsApiService) ReplaceAll(ctx _context.Context, serviceConfig []ServiceConfig) ([]ServiceConfig, *_nethttp.Response, error) {
+ * @return ApiReplaceAllRequest
+ */
+func (a *ApplicationSettingsApiService) ReplaceAll(ctx _context.Context) ApiReplaceAllRequest {
+	return ApiReplaceAllRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []ServiceConfig
+ */
+func (a *ApplicationSettingsApiService) ReplaceAllExecute(r ApiReplaceAllRequest) ([]ServiceConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPut
 		localVarPostBody     interface{}
@@ -1407,11 +1894,19 @@ func (a *ApplicationSettingsApiService) ReplaceAll(ctx _context.Context, service
 		localVarReturnValue  []ServiceConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/service"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.ReplaceAll")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/service"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.serviceConfig == nil {
+		return localVarReturnValue, nil, reportError("serviceConfig is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -1431,25 +1926,27 @@ func (a *ApplicationSettingsApiService) ReplaceAll(ctx _context.Context, service
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &serviceConfig
-	if ctx != nil {
+	localVarPostBody = r.serviceConfig
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1487,14 +1984,41 @@ func (a *ApplicationSettingsApiService) ReplaceAll(ctx _context.Context, service
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiUpdateEndpointConfigRequest struct {
+	ctx                _context.Context
+	ApiService         *ApplicationSettingsApiService
+	id                 string
+	httpEndpointConfig *HttpEndpointConfig
+}
+
+func (r ApiUpdateEndpointConfigRequest) HttpEndpointConfig(httpEndpointConfig HttpEndpointConfig) ApiUpdateEndpointConfigRequest {
+	r.httpEndpointConfig = &httpEndpointConfig
+	return r
+}
+
+func (r ApiUpdateEndpointConfigRequest) Execute() (HttpEndpointConfig, *_nethttp.Response, error) {
+	return r.ApiService.UpdateEndpointConfigExecute(r)
+}
+
 /*
-UpdateEndpointConfig Update endpoint configuration
+ * UpdateEndpointConfig Update endpoint configuration
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param id
- * @param httpEndpointConfig
-@return HttpEndpointConfig
-*/
-func (a *ApplicationSettingsApiService) UpdateEndpointConfig(ctx _context.Context, id string, httpEndpointConfig HttpEndpointConfig) (HttpEndpointConfig, *_nethttp.Response, error) {
+ * @return ApiUpdateEndpointConfigRequest
+ */
+func (a *ApplicationSettingsApiService) UpdateEndpointConfig(ctx _context.Context, id string) ApiUpdateEndpointConfigRequest {
+	return ApiUpdateEndpointConfigRequest{
+		ApiService: a,
+		ctx:        ctx,
+		id:         id,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return HttpEndpointConfig
+ */
+func (a *ApplicationSettingsApiService) UpdateEndpointConfigExecute(r ApiUpdateEndpointConfigRequest) (HttpEndpointConfig, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPut
 		localVarPostBody     interface{}
@@ -1504,13 +2028,20 @@ func (a *ApplicationSettingsApiService) UpdateEndpointConfig(ctx _context.Contex
 		localVarReturnValue  HttpEndpointConfig
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/application-monitoring/settings/http-endpoint/{id}"
-	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.QueryEscape(parameterToString(id, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ApplicationSettingsApiService.UpdateEndpointConfig")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/application-monitoring/settings/http-endpoint/{id}"
+	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", _neturl.PathEscape(parameterToString(r.id, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
+	if r.httpEndpointConfig == nil {
+		return localVarReturnValue, nil, reportError("httpEndpointConfig is required and must be specified")
+	}
 
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{"application/json"}
@@ -1530,25 +2061,27 @@ func (a *ApplicationSettingsApiService) UpdateEndpointConfig(ctx _context.Contex
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = &httpEndpointConfig
-	if ctx != nil {
+	localVarPostBody = r.httpEndpointConfig
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}

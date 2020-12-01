@@ -13,13 +13,44 @@ Method | HTTP request | Description
 
 ## GetInfrastructureViewTree
 
-> TreeNodeResult GetInfrastructureViewTree(ctx, )
+> TreeNodeResult GetInfrastructureViewTree(ctx).Execute()
 
 Get view tree
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureResourcesApi.GetInfrastructureViewTree(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureResourcesApi.GetInfrastructureViewTree``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetInfrastructureViewTree`: TreeNodeResult
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureResourcesApi.GetInfrastructureViewTree`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetInfrastructureViewTreeRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -41,13 +72,44 @@ This endpoint does not need any parameter.
 
 ## GetMonitoringState
 
-> MonitoringState GetMonitoringState(ctx, )
+> MonitoringState GetMonitoringState(ctx).Execute()
 
 Monitored host count
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureResourcesApi.GetMonitoringState(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureResourcesApi.GetMonitoringState``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetMonitoringState`: MonitoringState
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureResourcesApi.GetMonitoringState`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetMonitoringStateRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -69,17 +131,53 @@ This endpoint does not need any parameter.
 
 ## GetRelatedHosts
 
-> []string GetRelatedHosts(ctx, snapshotId)
+> []string GetRelatedHosts(ctx, snapshotId).Execute()
 
 Related hosts
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    snapshotId := "snapshotId_example" // string | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureResourcesApi.GetRelatedHosts(context.Background(), snapshotId).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureResourcesApi.GetRelatedHosts``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetRelatedHosts`: []string
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureResourcesApi.GetRelatedHosts`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**snapshotId** | **string**|  | 
+**snapshotId** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetRelatedHostsRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
 
 ### Return type
 
@@ -101,32 +199,59 @@ Name | Type | Description  | Notes
 
 ## SoftwareVersions
 
-> []SoftwareVersion SoftwareVersions(ctx, optional)
+> []SoftwareVersion SoftwareVersions(ctx).Time(time).Origin(origin).Type_(type_).Name(name).Version(version).Execute()
 
 Get installed software
 
-Retrieve information about the software you are running. This includes runtime and package manager information.  The `name`, `version`, `origin` and `type` parameters are optional filters that can be used to reduce the result data set.
 
-### Required Parameters
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    time := int64(789) // int64 |  (optional)
+    origin := "origin_example" // string |  (optional)
+    type_ := "type__example" // string |  (optional)
+    name := "name_example" // string |  (optional)
+    version := "version_example" // string |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureResourcesApi.SoftwareVersions(context.Background()).Time(time).Origin(origin).Type_(type_).Name(name).Version(version).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureResourcesApi.SoftwareVersions``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `SoftwareVersions`: []SoftwareVersion
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureResourcesApi.SoftwareVersions`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiSoftwareVersionsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***SoftwareVersionsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a SoftwareVersionsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **time** | **optional.Int64**|  | 
- **origin** | **optional.String**|  | 
- **type_** | **optional.String**|  | 
- **name** | **optional.String**|  | 
- **version** | **optional.String**|  | 
+ **time** | **int64** |  | 
+ **origin** | **string** |  | 
+ **type_** | **string** |  | 
+ **name** | **string** |  | 
+ **version** | **string** |  | 
 
 ### Return type
 

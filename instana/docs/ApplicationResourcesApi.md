@@ -13,33 +13,63 @@ Method | HTTP request | Description
 
 ## ApplicationResourcesEndpoints
 
-> EndpointResult ApplicationResourcesEndpoints(ctx, optional)
+> EndpointResult ApplicationResourcesEndpoints(ctx).NameFilter(nameFilter).Types(types).Technologies(technologies).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).ApplicationBoundaryScope(applicationBoundaryScope).Execute()
 
 Get endpoints
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    nameFilter := "nameFilter_example" // string |  (optional)
+    types := []string{"Inner_example"} // []string |  (optional)
+    technologies := []string{"Inner_example"} // []string |  (optional)
+    windowSize := int64(789) // int64 |  (optional)
+    to := int64(789) // int64 |  (optional)
+    page := int32(56) // int32 |  (optional)
+    pageSize := int32(56) // int32 |  (optional)
+    applicationBoundaryScope := "applicationBoundaryScope_example" // string |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.ApplicationResourcesApi.ApplicationResourcesEndpoints(context.Background()).NameFilter(nameFilter).Types(types).Technologies(technologies).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).ApplicationBoundaryScope(applicationBoundaryScope).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationResourcesApi.ApplicationResourcesEndpoints``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `ApplicationResourcesEndpoints`: EndpointResult
+    fmt.Fprintf(os.Stdout, "Response from `ApplicationResourcesApi.ApplicationResourcesEndpoints`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiApplicationResourcesEndpointsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***ApplicationResourcesEndpointsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a ApplicationResourcesEndpointsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **nameFilter** | **optional.String**|  | 
- **types** | [**optional.Interface of []string**](string.md)|  | 
- **technologies** | [**optional.Interface of []string**](string.md)|  | 
- **windowSize** | **optional.Int64**|  | 
- **to** | **optional.Int64**|  | 
- **page** | **optional.Int32**|  | 
- **pageSize** | **optional.Int32**|  | 
- **applicationBoundaryScope** | **optional.String**|  | 
+ **nameFilter** | **string** |  | 
+ **types** | **[]string** |  | 
+ **technologies** | **[]string** |  | 
+ **windowSize** | **int64** |  | 
+ **to** | **int64** |  | 
+ **page** | **int32** |  | 
+ **pageSize** | **int32** |  | 
+ **applicationBoundaryScope** | **string** |  | 
 
 ### Return type
 
@@ -61,31 +91,59 @@ Name | Type | Description  | Notes
 
 ## GetApplicationServices
 
-> ServiceResult GetApplicationServices(ctx, optional)
+> ServiceResult GetApplicationServices(ctx).NameFilter(nameFilter).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).ApplicationBoundaryScope(applicationBoundaryScope).Execute()
 
 Get applications/services
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    nameFilter := "nameFilter_example" // string |  (optional)
+    windowSize := int64(789) // int64 |  (optional)
+    to := int64(789) // int64 |  (optional)
+    page := int32(56) // int32 |  (optional)
+    pageSize := int32(56) // int32 |  (optional)
+    applicationBoundaryScope := "applicationBoundaryScope_example" // string |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.ApplicationResourcesApi.GetApplicationServices(context.Background()).NameFilter(nameFilter).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).ApplicationBoundaryScope(applicationBoundaryScope).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationResourcesApi.GetApplicationServices``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetApplicationServices`: ServiceResult
+    fmt.Fprintf(os.Stdout, "Response from `ApplicationResourcesApi.GetApplicationServices`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetApplicationServicesRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetApplicationServicesOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetApplicationServicesOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **nameFilter** | **optional.String**|  | 
- **windowSize** | **optional.Int64**|  | 
- **to** | **optional.Int64**|  | 
- **page** | **optional.Int32**|  | 
- **pageSize** | **optional.Int32**|  | 
- **applicationBoundaryScope** | **optional.String**|  | 
+ **nameFilter** | **string** |  | 
+ **windowSize** | **int64** |  | 
+ **to** | **int64** |  | 
+ **page** | **int32** |  | 
+ **pageSize** | **int32** |  | 
+ **applicationBoundaryScope** | **string** |  | 
 
 ### Return type
 
@@ -107,31 +165,59 @@ Name | Type | Description  | Notes
 
 ## GetApplications
 
-> ApplicationResult GetApplications(ctx, optional)
+> ApplicationResult GetApplications(ctx).NameFilter(nameFilter).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).ApplicationBoundaryScope(applicationBoundaryScope).Execute()
 
 Get applications
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    nameFilter := "nameFilter_example" // string |  (optional)
+    windowSize := int64(789) // int64 |  (optional)
+    to := int64(789) // int64 |  (optional)
+    page := int32(56) // int32 |  (optional)
+    pageSize := int32(56) // int32 |  (optional)
+    applicationBoundaryScope := "applicationBoundaryScope_example" // string |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.ApplicationResourcesApi.GetApplications(context.Background()).NameFilter(nameFilter).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).ApplicationBoundaryScope(applicationBoundaryScope).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationResourcesApi.GetApplications``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetApplications`: ApplicationResult
+    fmt.Fprintf(os.Stdout, "Response from `ApplicationResourcesApi.GetApplications`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetApplicationsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetApplicationsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetApplicationsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **nameFilter** | **optional.String**|  | 
- **windowSize** | **optional.Int64**|  | 
- **to** | **optional.Int64**|  | 
- **page** | **optional.Int32**|  | 
- **pageSize** | **optional.Int32**|  | 
- **applicationBoundaryScope** | **optional.String**|  | 
+ **nameFilter** | **string** |  | 
+ **windowSize** | **int64** |  | 
+ **to** | **int64** |  | 
+ **page** | **int32** |  | 
+ **pageSize** | **int32** |  | 
+ **applicationBoundaryScope** | **string** |  | 
 
 ### Return type
 
@@ -153,30 +239,57 @@ Name | Type | Description  | Notes
 
 ## GetServices
 
-> ServiceResult GetServices(ctx, optional)
+> ServiceResult GetServices(ctx).NameFilter(nameFilter).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).Execute()
 
 Get services
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    nameFilter := "nameFilter_example" // string |  (optional)
+    windowSize := int64(789) // int64 |  (optional)
+    to := int64(789) // int64 |  (optional)
+    page := int32(56) // int32 |  (optional)
+    pageSize := int32(56) // int32 |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.ApplicationResourcesApi.GetServices(context.Background()).NameFilter(nameFilter).WindowSize(windowSize).To(to).Page(page).PageSize(pageSize).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationResourcesApi.GetServices``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetServices`: ServiceResult
+    fmt.Fprintf(os.Stdout, "Response from `ApplicationResourcesApi.GetServices`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetServicesRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetServicesOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetServicesOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **nameFilter** | **optional.String**|  | 
- **windowSize** | **optional.Int64**|  | 
- **to** | **optional.Int64**|  | 
- **page** | **optional.Int32**|  | 
- **pageSize** | **optional.Int32**|  | 
+ **nameFilter** | **string** |  | 
+ **windowSize** | **int64** |  | 
+ **to** | **int64** |  | 
+ **page** | **int32** |  | 
+ **pageSize** | **int32** |  | 
 
 ### Return type
 

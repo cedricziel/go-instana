@@ -1,18 +1,23 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
+
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
 
 package instana
 
+import (
+	"encoding/json"
+)
+
 // PermissionSet struct for PermissionSet
 type PermissionSet struct {
-	Id                      string   `json:"id,omitempty"`
+	Id                      *string  `json:"id,omitempty"`
 	Name                    string   `json:"name"`
 	Permissions             []string `json:"permissions"`
 	ApplicationIds          []string `json:"applicationIds"`
@@ -20,5 +25,329 @@ type PermissionSet struct {
 	KubernetesNamespaceUIDs []string `json:"kubernetesNamespaceUIDs"`
 	WebsiteIds              []string `json:"websiteIds"`
 	MobileAppIds            []string `json:"mobileAppIds"`
-	InfraDfqFilter          string   `json:"infraDfqFilter,omitempty"`
+	InfraDfqFilter          *string  `json:"infraDfqFilter,omitempty"`
+}
+
+// NewPermissionSet instantiates a new PermissionSet object
+// This constructor will assign default values to properties that have it defined,
+// and makes sure properties required by API are set, but the set of arguments
+// will change when the set of required properties is changed
+func NewPermissionSet(name string, permissions []string, applicationIds []string, kubernetesClusterUUIDs []string, kubernetesNamespaceUIDs []string, websiteIds []string, mobileAppIds []string) *PermissionSet {
+	this := PermissionSet{}
+	this.Name = name
+	this.Permissions = permissions
+	this.ApplicationIds = applicationIds
+	this.KubernetesClusterUUIDs = kubernetesClusterUUIDs
+	this.KubernetesNamespaceUIDs = kubernetesNamespaceUIDs
+	this.WebsiteIds = websiteIds
+	this.MobileAppIds = mobileAppIds
+	return &this
+}
+
+// NewPermissionSetWithDefaults instantiates a new PermissionSet object
+// This constructor will only assign default values to properties that have it defined,
+// but it doesn't guarantee that properties required by API are set
+func NewPermissionSetWithDefaults() *PermissionSet {
+	this := PermissionSet{}
+	return &this
+}
+
+// GetId returns the Id field value if set, zero value otherwise.
+func (o *PermissionSet) GetId() string {
+	if o == nil || o.Id == nil {
+		var ret string
+		return ret
+	}
+	return *o.Id
+}
+
+// GetIdOk returns a tuple with the Id field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetIdOk() (*string, bool) {
+	if o == nil || o.Id == nil {
+		return nil, false
+	}
+	return o.Id, true
+}
+
+// HasId returns a boolean if a field has been set.
+func (o *PermissionSet) HasId() bool {
+	if o != nil && o.Id != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetId gets a reference to the given string and assigns it to the Id field.
+func (o *PermissionSet) SetId(v string) {
+	o.Id = &v
+}
+
+// GetName returns the Name field value
+func (o *PermissionSet) GetName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Name
+}
+
+// GetNameOk returns a tuple with the Name field value
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Name, true
+}
+
+// SetName sets field value
+func (o *PermissionSet) SetName(v string) {
+	o.Name = v
+}
+
+// GetPermissions returns the Permissions field value
+func (o *PermissionSet) GetPermissions() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.Permissions
+}
+
+// GetPermissionsOk returns a tuple with the Permissions field value
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetPermissionsOk() (*[]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Permissions, true
+}
+
+// SetPermissions sets field value
+func (o *PermissionSet) SetPermissions(v []string) {
+	o.Permissions = v
+}
+
+// GetApplicationIds returns the ApplicationIds field value
+func (o *PermissionSet) GetApplicationIds() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.ApplicationIds
+}
+
+// GetApplicationIdsOk returns a tuple with the ApplicationIds field value
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetApplicationIdsOk() (*[]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ApplicationIds, true
+}
+
+// SetApplicationIds sets field value
+func (o *PermissionSet) SetApplicationIds(v []string) {
+	o.ApplicationIds = v
+}
+
+// GetKubernetesClusterUUIDs returns the KubernetesClusterUUIDs field value
+func (o *PermissionSet) GetKubernetesClusterUUIDs() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.KubernetesClusterUUIDs
+}
+
+// GetKubernetesClusterUUIDsOk returns a tuple with the KubernetesClusterUUIDs field value
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetKubernetesClusterUUIDsOk() (*[]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.KubernetesClusterUUIDs, true
+}
+
+// SetKubernetesClusterUUIDs sets field value
+func (o *PermissionSet) SetKubernetesClusterUUIDs(v []string) {
+	o.KubernetesClusterUUIDs = v
+}
+
+// GetKubernetesNamespaceUIDs returns the KubernetesNamespaceUIDs field value
+func (o *PermissionSet) GetKubernetesNamespaceUIDs() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.KubernetesNamespaceUIDs
+}
+
+// GetKubernetesNamespaceUIDsOk returns a tuple with the KubernetesNamespaceUIDs field value
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetKubernetesNamespaceUIDsOk() (*[]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.KubernetesNamespaceUIDs, true
+}
+
+// SetKubernetesNamespaceUIDs sets field value
+func (o *PermissionSet) SetKubernetesNamespaceUIDs(v []string) {
+	o.KubernetesNamespaceUIDs = v
+}
+
+// GetWebsiteIds returns the WebsiteIds field value
+func (o *PermissionSet) GetWebsiteIds() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.WebsiteIds
+}
+
+// GetWebsiteIdsOk returns a tuple with the WebsiteIds field value
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetWebsiteIdsOk() (*[]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.WebsiteIds, true
+}
+
+// SetWebsiteIds sets field value
+func (o *PermissionSet) SetWebsiteIds(v []string) {
+	o.WebsiteIds = v
+}
+
+// GetMobileAppIds returns the MobileAppIds field value
+func (o *PermissionSet) GetMobileAppIds() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.MobileAppIds
+}
+
+// GetMobileAppIdsOk returns a tuple with the MobileAppIds field value
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetMobileAppIdsOk() (*[]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.MobileAppIds, true
+}
+
+// SetMobileAppIds sets field value
+func (o *PermissionSet) SetMobileAppIds(v []string) {
+	o.MobileAppIds = v
+}
+
+// GetInfraDfqFilter returns the InfraDfqFilter field value if set, zero value otherwise.
+func (o *PermissionSet) GetInfraDfqFilter() string {
+	if o == nil || o.InfraDfqFilter == nil {
+		var ret string
+		return ret
+	}
+	return *o.InfraDfqFilter
+}
+
+// GetInfraDfqFilterOk returns a tuple with the InfraDfqFilter field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PermissionSet) GetInfraDfqFilterOk() (*string, bool) {
+	if o == nil || o.InfraDfqFilter == nil {
+		return nil, false
+	}
+	return o.InfraDfqFilter, true
+}
+
+// HasInfraDfqFilter returns a boolean if a field has been set.
+func (o *PermissionSet) HasInfraDfqFilter() bool {
+	if o != nil && o.InfraDfqFilter != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetInfraDfqFilter gets a reference to the given string and assigns it to the InfraDfqFilter field.
+func (o *PermissionSet) SetInfraDfqFilter(v string) {
+	o.InfraDfqFilter = &v
+}
+
+func (o PermissionSet) MarshalJSON() ([]byte, error) {
+	toSerialize := map[string]interface{}{}
+	if o.Id != nil {
+		toSerialize["id"] = o.Id
+	}
+	if true {
+		toSerialize["name"] = o.Name
+	}
+	if true {
+		toSerialize["permissions"] = o.Permissions
+	}
+	if true {
+		toSerialize["applicationIds"] = o.ApplicationIds
+	}
+	if true {
+		toSerialize["kubernetesClusterUUIDs"] = o.KubernetesClusterUUIDs
+	}
+	if true {
+		toSerialize["kubernetesNamespaceUIDs"] = o.KubernetesNamespaceUIDs
+	}
+	if true {
+		toSerialize["websiteIds"] = o.WebsiteIds
+	}
+	if true {
+		toSerialize["mobileAppIds"] = o.MobileAppIds
+	}
+	if o.InfraDfqFilter != nil {
+		toSerialize["infraDfqFilter"] = o.InfraDfqFilter
+	}
+	return json.Marshal(toSerialize)
+}
+
+type NullablePermissionSet struct {
+	value *PermissionSet
+	isSet bool
+}
+
+func (v NullablePermissionSet) Get() *PermissionSet {
+	return v.value
+}
+
+func (v *NullablePermissionSet) Set(val *PermissionSet) {
+	v.value = val
+	v.isSet = true
+}
+
+func (v NullablePermissionSet) IsSet() bool {
+	return v.isSet
+}
+
+func (v *NullablePermissionSet) Unset() {
+	v.value = nil
+	v.isSet = false
+}
+
+func NewNullablePermissionSet(val *PermissionSet) *NullablePermissionSet {
+	return &NullablePermissionSet{value: val, isSet: true}
+}
+
+func (v NullablePermissionSet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.value)
+}
+
+func (v *NullablePermissionSet) UnmarshalJSON(src []byte) error {
+	v.isSet = true
+	return json.Unmarshal(src, &v.value)
 }

@@ -16,21 +16,53 @@ Method | HTTP request | Description
 
 ## CreateGroup
 
-> RbacGroup CreateGroup(ctx, rbacGroup)
+> ScopedGroup CreateGroup(ctx).ScopedGroup(scopedGroup).Execute()
 
 Create group
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    scopedGroup := *openapiclient.NewScopedGroup("Name_example", []openapiclient.GroupMember{*openapiclient.NewGroupMember("UserId_example")}, []openapiclient.GroupPermission{*openapiclient.NewGroupPermission("Scope_example")}) // ScopedGroup | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.GroupsApi.CreateGroup(context.Background()).ScopedGroup(scopedGroup).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `GroupsApi.CreateGroup``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `CreateGroup`: ScopedGroup
+    fmt.Fprintf(os.Stdout, "Response from `GroupsApi.CreateGroup`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiCreateGroupRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**rbacGroup** | [**RbacGroup**](RbacGroup.md)|  | 
+ **scopedGroup** | [**ScopedGroup**](ScopedGroup.md) |  | 
 
 ### Return type
 
-[**RbacGroup**](RbacGroup.md)
+[**ScopedGroup**](ScopedGroup.md)
 
 ### Authorization
 
@@ -48,17 +80,51 @@ Name | Type | Description  | Notes
 
 ## DeleteGroup
 
-> DeleteGroup(ctx, id)
+> DeleteGroup(ctx, id).Execute()
 
 Delete groups
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    id := "id_example" // string | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.GroupsApi.DeleteGroup(context.Background(), id).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `GroupsApi.DeleteGroup``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string**|  | 
+**id** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiDeleteGroupRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
 
 ### Return type
 
@@ -80,17 +146,53 @@ Name | Type | Description  | Notes
 
 ## GetGroup
 
-> RbacGroup GetGroup(ctx, id)
+> RbacGroup GetGroup(ctx, id).Execute()
 
 Get group
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    id := "id_example" // string | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.GroupsApi.GetGroup(context.Background(), id).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `GroupsApi.GetGroup``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetGroup`: RbacGroup
+    fmt.Fprintf(os.Stdout, "Response from `GroupsApi.GetGroup`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string**|  | 
+**id** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetGroupRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
 
 ### Return type
 
@@ -112,13 +214,44 @@ Name | Type | Description  | Notes
 
 ## GetGroups
 
-> []RbacGroup GetGroups(ctx, )
+> []RbacGroup GetGroups(ctx).Execute()
 
 All groups
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.GroupsApi.GetGroups(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `GroupsApi.GetGroups``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetGroups`: []RbacGroup
+    fmt.Fprintf(os.Stdout, "Response from `GroupsApi.GetGroups`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetGroupsRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -140,17 +273,53 @@ This endpoint does not need any parameter.
 
 ## GetGroupsByUser
 
-> []RbacGroup GetGroupsByUser(ctx, email)
+> []RbacGroup GetGroupsByUser(ctx, email).Execute()
 
 Get groups
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    email := "email_example" // string | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.GroupsApi.GetGroupsByUser(context.Background(), email).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `GroupsApi.GetGroupsByUser``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetGroupsByUser`: []RbacGroup
+    fmt.Fprintf(os.Stdout, "Response from `GroupsApi.GetGroupsByUser`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**email** | **string**|  | 
+**email** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetGroupsByUserRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
 
 ### Return type
 
@@ -172,22 +341,59 @@ Name | Type | Description  | Notes
 
 ## UpdateGroup
 
-> RbacGroup UpdateGroup(ctx, id, rbacGroup)
+> ScopedGroup UpdateGroup(ctx, id).ScopedGroup(scopedGroup).Execute()
 
 Update group
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    id := "id_example" // string | 
+    scopedGroup := *openapiclient.NewScopedGroup("Name_example", []openapiclient.GroupMember{*openapiclient.NewGroupMember("UserId_example")}, []openapiclient.GroupPermission{*openapiclient.NewGroupPermission("Scope_example")}) // ScopedGroup | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.GroupsApi.UpdateGroup(context.Background(), id).ScopedGroup(scopedGroup).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `GroupsApi.UpdateGroup``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `UpdateGroup`: ScopedGroup
+    fmt.Fprintf(os.Stdout, "Response from `GroupsApi.UpdateGroup`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string**|  | 
-**rbacGroup** | [**RbacGroup**](RbacGroup.md)|  | 
+**id** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiUpdateGroupRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **scopedGroup** | [**ScopedGroup**](ScopedGroup.md) |  | 
 
 ### Return type
 
-[**RbacGroup**](RbacGroup.md)
+[**ScopedGroup**](ScopedGroup.md)
 
 ### Authorization
 
@@ -205,17 +411,49 @@ Name | Type | Description  | Notes
 
 ## UpdateGroups
 
-> []RbacGroup UpdateGroups(ctx, rbacGroup)
+> []RbacGroup UpdateGroups(ctx).RbacGroup(rbacGroup).Execute()
 
 Create groups
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    rbacGroup := []openapiclient.RbacGroup{*openapiclient.NewRbacGroup("Name_example", []openapiclient.Member{*openapiclient.NewMember("UserId_example", "Email_example")})} // []RbacGroup | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.GroupsApi.UpdateGroups(context.Background()).RbacGroup(rbacGroup).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `GroupsApi.UpdateGroups``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `UpdateGroups`: []RbacGroup
+    fmt.Fprintf(os.Stdout, "Response from `GroupsApi.UpdateGroups`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiUpdateGroupsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**rbacGroup** | [**[]RbacGroup**](RbacGroup.md)|  | 
+ **rbacGroup** | [**[]RbacGroup**](RbacGroup.md) |  | 
 
 ### Return type
 

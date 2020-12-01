@@ -12,27 +12,51 @@ Method | HTTP request | Description
 
 ## GetApplicationMetrics
 
-> ApplicationMetricResult GetApplicationMetrics(ctx, optional)
+> ApplicationMetricResult GetApplicationMetrics(ctx).FillTimeSeries(fillTimeSeries).GetApplications(getApplications).Execute()
 
 Get Application Metrics
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    fillTimeSeries := true // bool |  (optional)
+    getApplications := *openapiclient.NewGetApplications([]openapiclient.AppDataMetricConfiguration{*openapiclient.NewAppDataMetricConfiguration("Metric_example", "Aggregation_example")}) // GetApplications |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.ApplicationMetricsApi.GetApplicationMetrics(context.Background()).FillTimeSeries(fillTimeSeries).GetApplications(getApplications).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationMetricsApi.GetApplicationMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetApplicationMetrics`: ApplicationMetricResult
+    fmt.Fprintf(os.Stdout, "Response from `ApplicationMetricsApi.GetApplicationMetrics`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetApplicationMetricsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetApplicationMetricsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetApplicationMetricsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **fillTimeSeries** | **optional.Bool**|  | 
- **getApplications** | [**optional.Interface of GetApplications**](GetApplications.md)|  | 
+ **fillTimeSeries** | **bool** |  | 
+ **getApplications** | [**GetApplications**](GetApplications.md) |  | 
 
 ### Return type
 
@@ -54,27 +78,51 @@ Name | Type | Description  | Notes
 
 ## GetEndpointsMetrics
 
-> EndpointMetricResult GetEndpointsMetrics(ctx, optional)
+> EndpointMetricResult GetEndpointsMetrics(ctx).FillTimeSeries(fillTimeSeries).GetEndpoints(getEndpoints).Execute()
 
 Get Endpoint metrics
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    fillTimeSeries := true // bool |  (optional)
+    getEndpoints := *openapiclient.NewGetEndpoints([]openapiclient.AppDataMetricConfiguration{*openapiclient.NewAppDataMetricConfiguration("Metric_example", "Aggregation_example")}) // GetEndpoints |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.ApplicationMetricsApi.GetEndpointsMetrics(context.Background()).FillTimeSeries(fillTimeSeries).GetEndpoints(getEndpoints).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationMetricsApi.GetEndpointsMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetEndpointsMetrics`: EndpointMetricResult
+    fmt.Fprintf(os.Stdout, "Response from `ApplicationMetricsApi.GetEndpointsMetrics`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetEndpointsMetricsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetEndpointsMetricsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetEndpointsMetricsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **fillTimeSeries** | **optional.Bool**|  | 
- **getEndpoints** | [**optional.Interface of GetEndpoints**](GetEndpoints.md)|  | 
+ **fillTimeSeries** | **bool** |  | 
+ **getEndpoints** | [**GetEndpoints**](GetEndpoints.md) |  | 
 
 ### Return type
 
@@ -96,27 +144,51 @@ Name | Type | Description  | Notes
 
 ## GetServicesMetrics
 
-> ServiceMetricResult GetServicesMetrics(ctx, optional)
+> ServiceMetricResult GetServicesMetrics(ctx).FillTimeSeries(fillTimeSeries).GetServices(getServices).Execute()
 
 Get Service metrics
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    fillTimeSeries := true // bool |  (optional)
+    getServices := *openapiclient.NewGetServices([]openapiclient.AppDataMetricConfiguration{*openapiclient.NewAppDataMetricConfiguration("Metric_example", "Aggregation_example")}) // GetServices |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.ApplicationMetricsApi.GetServicesMetrics(context.Background()).FillTimeSeries(fillTimeSeries).GetServices(getServices).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationMetricsApi.GetServicesMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetServicesMetrics`: ServiceMetricResult
+    fmt.Fprintf(os.Stdout, "Response from `ApplicationMetricsApi.GetServicesMetrics`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetServicesMetricsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetServicesMetricsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetServicesMetricsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **fillTimeSeries** | **optional.Bool**|  | 
- **getServices** | [**optional.Interface of GetServices**](GetServices.md)|  | 
+ **fillTimeSeries** | **bool** |  | 
+ **getServices** | [**GetServices**](GetServices.md) |  | 
 
 ### Return type
 

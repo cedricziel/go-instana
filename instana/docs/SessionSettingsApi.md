@@ -12,13 +12,42 @@ Method | HTTP request | Description
 
 ## DeleteSessionSettings
 
-> DeleteSessionSettings(ctx, )
+> DeleteSessionSettings(ctx).Execute()
 
 Delete session settings
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.SessionSettingsApi.DeleteSessionSettings(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `SessionSettingsApi.DeleteSessionSettings``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiDeleteSessionSettingsRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -40,13 +69,44 @@ This endpoint does not need any parameter.
 
 ## GetSessionSettings
 
-> SessionSettings GetSessionSettings(ctx, )
+> SessionSettings GetSessionSettings(ctx).Execute()
 
 Session settings
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.SessionSettingsApi.GetSessionSettings(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `SessionSettingsApi.GetSessionSettings``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetSessionSettings`: SessionSettings
+    fmt.Fprintf(os.Stdout, "Response from `SessionSettingsApi.GetSessionSettings`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetSessionSettingsRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -68,26 +128,49 @@ This endpoint does not need any parameter.
 
 ## SetSessionSettings
 
-> SessionSettings SetSessionSettings(ctx, optional)
+> SessionSettings SetSessionSettings(ctx).SessionSettings(sessionSettings).Execute()
 
 Configure session settings
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    sessionSettings := *openapiclient.NewSessionSettings() // SessionSettings |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.SessionSettingsApi.SetSessionSettings(context.Background()).SessionSettings(sessionSettings).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `SessionSettingsApi.SetSessionSettings``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `SetSessionSettings`: SessionSettings
+    fmt.Fprintf(os.Stdout, "Response from `SessionSettingsApi.SetSessionSettings`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiSetSessionSettingsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***SetSessionSettingsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a SetSessionSettingsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **sessionSettings** | [**optional.Interface of SessionSettings**](SessionSettings.md)|  | 
+ **sessionSettings** | [**SessionSettings**](SessionSettings.md) |  | 
 
 ### Return type
 

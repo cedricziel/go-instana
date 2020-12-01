@@ -1,44 +1,1144 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
+
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
 
 package instana
 
+import (
+	"encoding/json"
+)
+
 // Role struct for Role
 type Role struct {
-	Id                                 string `json:"id"`
-	Name                               string `json:"name"`
-	CanConfigureServiceMapping         bool   `json:"canConfigureServiceMapping,omitempty"`
-	CanConfigureEumApplications        bool   `json:"canConfigureEumApplications,omitempty"`
-	CanConfigureMobileAppMonitoring    bool   `json:"canConfigureMobileAppMonitoring,omitempty"`
-	CanConfigureUsers                  bool   `json:"canConfigureUsers,omitempty"`
-	CanInstallNewAgents                bool   `json:"canInstallNewAgents,omitempty"`
-	CanSeeUsageInformation             bool   `json:"canSeeUsageInformation,omitempty"`
-	CanConfigureIntegrations           bool   `json:"canConfigureIntegrations,omitempty"`
-	CanSeeOnPremLicenseInformation     bool   `json:"canSeeOnPremLicenseInformation,omitempty"`
-	CanConfigureRoles                  bool   `json:"canConfigureRoles,omitempty"`
-	CanConfigureCustomAlerts           bool   `json:"canConfigureCustomAlerts,omitempty"`
-	CanConfigureApiTokens              bool   `json:"canConfigureApiTokens,omitempty"`
-	CanConfigureAgentRunMode           bool   `json:"canConfigureAgentRunMode,omitempty"`
-	CanViewAuditLog                    bool   `json:"canViewAuditLog,omitempty"`
-	CanConfigureObjectives             bool   `json:"canConfigureObjectives,omitempty"`
-	CanConfigureAgents                 bool   `json:"canConfigureAgents,omitempty"`
-	CanConfigureAuthenticationMethods  bool   `json:"canConfigureAuthenticationMethods,omitempty"`
-	CanConfigureApplications           bool   `json:"canConfigureApplications,omitempty"`
-	CanConfigureTeams                  bool   `json:"canConfigureTeams,omitempty"`
-	RestrictedAccess                   bool   `json:"restrictedAccess,omitempty"`
-	CanConfigureReleases               bool   `json:"canConfigureReleases,omitempty"`
-	CanConfigureLogManagement          bool   `json:"canConfigureLogManagement,omitempty"`
-	CanCreatePublicCustomDashboards    bool   `json:"canCreatePublicCustomDashboards,omitempty"`
-	CanViewLogs                        bool   `json:"canViewLogs,omitempty"`
-	CanViewTraceDetails                bool   `json:"canViewTraceDetails,omitempty"`
-	CanConfigureSessionSettings        bool   `json:"canConfigureSessionSettings,omitempty"`
-	CanConfigureServiceLevelIndicators bool   `json:"canConfigureServiceLevelIndicators,omitempty"`
-	CanConfigureGlobalAlertPayload     bool   `json:"canConfigureGlobalAlertPayload,omitempty"`
+	Id                                  string `json:"id"`
+	Name                                string `json:"name"`
+	CanConfigureServiceMapping          *bool  `json:"canConfigureServiceMapping,omitempty"`
+	CanConfigureEumApplications         *bool  `json:"canConfigureEumApplications,omitempty"`
+	CanConfigureMobileAppMonitoring     *bool  `json:"canConfigureMobileAppMonitoring,omitempty"`
+	CanConfigureUsers                   *bool  `json:"canConfigureUsers,omitempty"`
+	CanInstallNewAgents                 *bool  `json:"canInstallNewAgents,omitempty"`
+	CanSeeUsageInformation              *bool  `json:"canSeeUsageInformation,omitempty"`
+	CanConfigureIntegrations            *bool  `json:"canConfigureIntegrations,omitempty"`
+	CanSeeOnPremLicenseInformation      *bool  `json:"canSeeOnPremLicenseInformation,omitempty"`
+	CanConfigureRoles                   *bool  `json:"canConfigureRoles,omitempty"`
+	CanConfigureCustomAlerts            *bool  `json:"canConfigureCustomAlerts,omitempty"`
+	CanConfigureApiTokens               *bool  `json:"canConfigureApiTokens,omitempty"`
+	CanConfigureAgentRunMode            *bool  `json:"canConfigureAgentRunMode,omitempty"`
+	CanViewAuditLog                     *bool  `json:"canViewAuditLog,omitempty"`
+	CanConfigureObjectives              *bool  `json:"canConfigureObjectives,omitempty"`
+	CanConfigureAgents                  *bool  `json:"canConfigureAgents,omitempty"`
+	CanConfigureAuthenticationMethods   *bool  `json:"canConfigureAuthenticationMethods,omitempty"`
+	CanConfigureApplications            *bool  `json:"canConfigureApplications,omitempty"`
+	CanConfigureTeams                   *bool  `json:"canConfigureTeams,omitempty"`
+	RestrictedAccess                    *bool  `json:"restrictedAccess,omitempty"`
+	CanConfigureReleases                *bool  `json:"canConfigureReleases,omitempty"`
+	CanConfigureLogManagement           *bool  `json:"canConfigureLogManagement,omitempty"`
+	CanCreatePublicCustomDashboards     *bool  `json:"canCreatePublicCustomDashboards,omitempty"`
+	CanViewLogs                         *bool  `json:"canViewLogs,omitempty"`
+	CanViewTraceDetails                 *bool  `json:"canViewTraceDetails,omitempty"`
+	CanConfigureSessionSettings         *bool  `json:"canConfigureSessionSettings,omitempty"`
+	CanConfigureServiceLevelIndicators  *bool  `json:"canConfigureServiceLevelIndicators,omitempty"`
+	CanConfigureGlobalAlertPayload      *bool  `json:"canConfigureGlobalAlertPayload,omitempty"`
+	CanViewAccountAndBillingInformation *bool  `json:"canViewAccountAndBillingInformation,omitempty"`
+}
+
+// NewRole instantiates a new Role object
+// This constructor will assign default values to properties that have it defined,
+// and makes sure properties required by API are set, but the set of arguments
+// will change when the set of required properties is changed
+func NewRole(id string, name string) *Role {
+	this := Role{}
+	this.Id = id
+	this.Name = name
+	return &this
+}
+
+// NewRoleWithDefaults instantiates a new Role object
+// This constructor will only assign default values to properties that have it defined,
+// but it doesn't guarantee that properties required by API are set
+func NewRoleWithDefaults() *Role {
+	this := Role{}
+	return &this
+}
+
+// GetId returns the Id field value
+func (o *Role) GetId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Id
+}
+
+// GetIdOk returns a tuple with the Id field value
+// and a boolean to check if the value has been set.
+func (o *Role) GetIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Id, true
+}
+
+// SetId sets field value
+func (o *Role) SetId(v string) {
+	o.Id = v
+}
+
+// GetName returns the Name field value
+func (o *Role) GetName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Name
+}
+
+// GetNameOk returns a tuple with the Name field value
+// and a boolean to check if the value has been set.
+func (o *Role) GetNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Name, true
+}
+
+// SetName sets field value
+func (o *Role) SetName(v string) {
+	o.Name = v
+}
+
+// GetCanConfigureServiceMapping returns the CanConfigureServiceMapping field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureServiceMapping() bool {
+	if o == nil || o.CanConfigureServiceMapping == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureServiceMapping
+}
+
+// GetCanConfigureServiceMappingOk returns a tuple with the CanConfigureServiceMapping field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureServiceMappingOk() (*bool, bool) {
+	if o == nil || o.CanConfigureServiceMapping == nil {
+		return nil, false
+	}
+	return o.CanConfigureServiceMapping, true
+}
+
+// HasCanConfigureServiceMapping returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureServiceMapping() bool {
+	if o != nil && o.CanConfigureServiceMapping != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureServiceMapping gets a reference to the given bool and assigns it to the CanConfigureServiceMapping field.
+func (o *Role) SetCanConfigureServiceMapping(v bool) {
+	o.CanConfigureServiceMapping = &v
+}
+
+// GetCanConfigureEumApplications returns the CanConfigureEumApplications field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureEumApplications() bool {
+	if o == nil || o.CanConfigureEumApplications == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureEumApplications
+}
+
+// GetCanConfigureEumApplicationsOk returns a tuple with the CanConfigureEumApplications field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureEumApplicationsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureEumApplications == nil {
+		return nil, false
+	}
+	return o.CanConfigureEumApplications, true
+}
+
+// HasCanConfigureEumApplications returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureEumApplications() bool {
+	if o != nil && o.CanConfigureEumApplications != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureEumApplications gets a reference to the given bool and assigns it to the CanConfigureEumApplications field.
+func (o *Role) SetCanConfigureEumApplications(v bool) {
+	o.CanConfigureEumApplications = &v
+}
+
+// GetCanConfigureMobileAppMonitoring returns the CanConfigureMobileAppMonitoring field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureMobileAppMonitoring() bool {
+	if o == nil || o.CanConfigureMobileAppMonitoring == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureMobileAppMonitoring
+}
+
+// GetCanConfigureMobileAppMonitoringOk returns a tuple with the CanConfigureMobileAppMonitoring field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureMobileAppMonitoringOk() (*bool, bool) {
+	if o == nil || o.CanConfigureMobileAppMonitoring == nil {
+		return nil, false
+	}
+	return o.CanConfigureMobileAppMonitoring, true
+}
+
+// HasCanConfigureMobileAppMonitoring returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureMobileAppMonitoring() bool {
+	if o != nil && o.CanConfigureMobileAppMonitoring != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureMobileAppMonitoring gets a reference to the given bool and assigns it to the CanConfigureMobileAppMonitoring field.
+func (o *Role) SetCanConfigureMobileAppMonitoring(v bool) {
+	o.CanConfigureMobileAppMonitoring = &v
+}
+
+// GetCanConfigureUsers returns the CanConfigureUsers field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureUsers() bool {
+	if o == nil || o.CanConfigureUsers == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureUsers
+}
+
+// GetCanConfigureUsersOk returns a tuple with the CanConfigureUsers field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureUsersOk() (*bool, bool) {
+	if o == nil || o.CanConfigureUsers == nil {
+		return nil, false
+	}
+	return o.CanConfigureUsers, true
+}
+
+// HasCanConfigureUsers returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureUsers() bool {
+	if o != nil && o.CanConfigureUsers != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureUsers gets a reference to the given bool and assigns it to the CanConfigureUsers field.
+func (o *Role) SetCanConfigureUsers(v bool) {
+	o.CanConfigureUsers = &v
+}
+
+// GetCanInstallNewAgents returns the CanInstallNewAgents field value if set, zero value otherwise.
+func (o *Role) GetCanInstallNewAgents() bool {
+	if o == nil || o.CanInstallNewAgents == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanInstallNewAgents
+}
+
+// GetCanInstallNewAgentsOk returns a tuple with the CanInstallNewAgents field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanInstallNewAgentsOk() (*bool, bool) {
+	if o == nil || o.CanInstallNewAgents == nil {
+		return nil, false
+	}
+	return o.CanInstallNewAgents, true
+}
+
+// HasCanInstallNewAgents returns a boolean if a field has been set.
+func (o *Role) HasCanInstallNewAgents() bool {
+	if o != nil && o.CanInstallNewAgents != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanInstallNewAgents gets a reference to the given bool and assigns it to the CanInstallNewAgents field.
+func (o *Role) SetCanInstallNewAgents(v bool) {
+	o.CanInstallNewAgents = &v
+}
+
+// GetCanSeeUsageInformation returns the CanSeeUsageInformation field value if set, zero value otherwise.
+func (o *Role) GetCanSeeUsageInformation() bool {
+	if o == nil || o.CanSeeUsageInformation == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanSeeUsageInformation
+}
+
+// GetCanSeeUsageInformationOk returns a tuple with the CanSeeUsageInformation field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanSeeUsageInformationOk() (*bool, bool) {
+	if o == nil || o.CanSeeUsageInformation == nil {
+		return nil, false
+	}
+	return o.CanSeeUsageInformation, true
+}
+
+// HasCanSeeUsageInformation returns a boolean if a field has been set.
+func (o *Role) HasCanSeeUsageInformation() bool {
+	if o != nil && o.CanSeeUsageInformation != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanSeeUsageInformation gets a reference to the given bool and assigns it to the CanSeeUsageInformation field.
+func (o *Role) SetCanSeeUsageInformation(v bool) {
+	o.CanSeeUsageInformation = &v
+}
+
+// GetCanConfigureIntegrations returns the CanConfigureIntegrations field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureIntegrations() bool {
+	if o == nil || o.CanConfigureIntegrations == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureIntegrations
+}
+
+// GetCanConfigureIntegrationsOk returns a tuple with the CanConfigureIntegrations field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureIntegrationsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureIntegrations == nil {
+		return nil, false
+	}
+	return o.CanConfigureIntegrations, true
+}
+
+// HasCanConfigureIntegrations returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureIntegrations() bool {
+	if o != nil && o.CanConfigureIntegrations != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureIntegrations gets a reference to the given bool and assigns it to the CanConfigureIntegrations field.
+func (o *Role) SetCanConfigureIntegrations(v bool) {
+	o.CanConfigureIntegrations = &v
+}
+
+// GetCanSeeOnPremLicenseInformation returns the CanSeeOnPremLicenseInformation field value if set, zero value otherwise.
+func (o *Role) GetCanSeeOnPremLicenseInformation() bool {
+	if o == nil || o.CanSeeOnPremLicenseInformation == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanSeeOnPremLicenseInformation
+}
+
+// GetCanSeeOnPremLicenseInformationOk returns a tuple with the CanSeeOnPremLicenseInformation field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanSeeOnPremLicenseInformationOk() (*bool, bool) {
+	if o == nil || o.CanSeeOnPremLicenseInformation == nil {
+		return nil, false
+	}
+	return o.CanSeeOnPremLicenseInformation, true
+}
+
+// HasCanSeeOnPremLicenseInformation returns a boolean if a field has been set.
+func (o *Role) HasCanSeeOnPremLicenseInformation() bool {
+	if o != nil && o.CanSeeOnPremLicenseInformation != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanSeeOnPremLicenseInformation gets a reference to the given bool and assigns it to the CanSeeOnPremLicenseInformation field.
+func (o *Role) SetCanSeeOnPremLicenseInformation(v bool) {
+	o.CanSeeOnPremLicenseInformation = &v
+}
+
+// GetCanConfigureRoles returns the CanConfigureRoles field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureRoles() bool {
+	if o == nil || o.CanConfigureRoles == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureRoles
+}
+
+// GetCanConfigureRolesOk returns a tuple with the CanConfigureRoles field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureRolesOk() (*bool, bool) {
+	if o == nil || o.CanConfigureRoles == nil {
+		return nil, false
+	}
+	return o.CanConfigureRoles, true
+}
+
+// HasCanConfigureRoles returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureRoles() bool {
+	if o != nil && o.CanConfigureRoles != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureRoles gets a reference to the given bool and assigns it to the CanConfigureRoles field.
+func (o *Role) SetCanConfigureRoles(v bool) {
+	o.CanConfigureRoles = &v
+}
+
+// GetCanConfigureCustomAlerts returns the CanConfigureCustomAlerts field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureCustomAlerts() bool {
+	if o == nil || o.CanConfigureCustomAlerts == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureCustomAlerts
+}
+
+// GetCanConfigureCustomAlertsOk returns a tuple with the CanConfigureCustomAlerts field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureCustomAlertsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureCustomAlerts == nil {
+		return nil, false
+	}
+	return o.CanConfigureCustomAlerts, true
+}
+
+// HasCanConfigureCustomAlerts returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureCustomAlerts() bool {
+	if o != nil && o.CanConfigureCustomAlerts != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureCustomAlerts gets a reference to the given bool and assigns it to the CanConfigureCustomAlerts field.
+func (o *Role) SetCanConfigureCustomAlerts(v bool) {
+	o.CanConfigureCustomAlerts = &v
+}
+
+// GetCanConfigureApiTokens returns the CanConfigureApiTokens field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureApiTokens() bool {
+	if o == nil || o.CanConfigureApiTokens == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureApiTokens
+}
+
+// GetCanConfigureApiTokensOk returns a tuple with the CanConfigureApiTokens field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureApiTokensOk() (*bool, bool) {
+	if o == nil || o.CanConfigureApiTokens == nil {
+		return nil, false
+	}
+	return o.CanConfigureApiTokens, true
+}
+
+// HasCanConfigureApiTokens returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureApiTokens() bool {
+	if o != nil && o.CanConfigureApiTokens != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureApiTokens gets a reference to the given bool and assigns it to the CanConfigureApiTokens field.
+func (o *Role) SetCanConfigureApiTokens(v bool) {
+	o.CanConfigureApiTokens = &v
+}
+
+// GetCanConfigureAgentRunMode returns the CanConfigureAgentRunMode field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureAgentRunMode() bool {
+	if o == nil || o.CanConfigureAgentRunMode == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureAgentRunMode
+}
+
+// GetCanConfigureAgentRunModeOk returns a tuple with the CanConfigureAgentRunMode field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureAgentRunModeOk() (*bool, bool) {
+	if o == nil || o.CanConfigureAgentRunMode == nil {
+		return nil, false
+	}
+	return o.CanConfigureAgentRunMode, true
+}
+
+// HasCanConfigureAgentRunMode returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureAgentRunMode() bool {
+	if o != nil && o.CanConfigureAgentRunMode != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureAgentRunMode gets a reference to the given bool and assigns it to the CanConfigureAgentRunMode field.
+func (o *Role) SetCanConfigureAgentRunMode(v bool) {
+	o.CanConfigureAgentRunMode = &v
+}
+
+// GetCanViewAuditLog returns the CanViewAuditLog field value if set, zero value otherwise.
+func (o *Role) GetCanViewAuditLog() bool {
+	if o == nil || o.CanViewAuditLog == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanViewAuditLog
+}
+
+// GetCanViewAuditLogOk returns a tuple with the CanViewAuditLog field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanViewAuditLogOk() (*bool, bool) {
+	if o == nil || o.CanViewAuditLog == nil {
+		return nil, false
+	}
+	return o.CanViewAuditLog, true
+}
+
+// HasCanViewAuditLog returns a boolean if a field has been set.
+func (o *Role) HasCanViewAuditLog() bool {
+	if o != nil && o.CanViewAuditLog != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanViewAuditLog gets a reference to the given bool and assigns it to the CanViewAuditLog field.
+func (o *Role) SetCanViewAuditLog(v bool) {
+	o.CanViewAuditLog = &v
+}
+
+// GetCanConfigureObjectives returns the CanConfigureObjectives field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureObjectives() bool {
+	if o == nil || o.CanConfigureObjectives == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureObjectives
+}
+
+// GetCanConfigureObjectivesOk returns a tuple with the CanConfigureObjectives field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureObjectivesOk() (*bool, bool) {
+	if o == nil || o.CanConfigureObjectives == nil {
+		return nil, false
+	}
+	return o.CanConfigureObjectives, true
+}
+
+// HasCanConfigureObjectives returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureObjectives() bool {
+	if o != nil && o.CanConfigureObjectives != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureObjectives gets a reference to the given bool and assigns it to the CanConfigureObjectives field.
+func (o *Role) SetCanConfigureObjectives(v bool) {
+	o.CanConfigureObjectives = &v
+}
+
+// GetCanConfigureAgents returns the CanConfigureAgents field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureAgents() bool {
+	if o == nil || o.CanConfigureAgents == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureAgents
+}
+
+// GetCanConfigureAgentsOk returns a tuple with the CanConfigureAgents field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureAgentsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureAgents == nil {
+		return nil, false
+	}
+	return o.CanConfigureAgents, true
+}
+
+// HasCanConfigureAgents returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureAgents() bool {
+	if o != nil && o.CanConfigureAgents != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureAgents gets a reference to the given bool and assigns it to the CanConfigureAgents field.
+func (o *Role) SetCanConfigureAgents(v bool) {
+	o.CanConfigureAgents = &v
+}
+
+// GetCanConfigureAuthenticationMethods returns the CanConfigureAuthenticationMethods field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureAuthenticationMethods() bool {
+	if o == nil || o.CanConfigureAuthenticationMethods == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureAuthenticationMethods
+}
+
+// GetCanConfigureAuthenticationMethodsOk returns a tuple with the CanConfigureAuthenticationMethods field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureAuthenticationMethodsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureAuthenticationMethods == nil {
+		return nil, false
+	}
+	return o.CanConfigureAuthenticationMethods, true
+}
+
+// HasCanConfigureAuthenticationMethods returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureAuthenticationMethods() bool {
+	if o != nil && o.CanConfigureAuthenticationMethods != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureAuthenticationMethods gets a reference to the given bool and assigns it to the CanConfigureAuthenticationMethods field.
+func (o *Role) SetCanConfigureAuthenticationMethods(v bool) {
+	o.CanConfigureAuthenticationMethods = &v
+}
+
+// GetCanConfigureApplications returns the CanConfigureApplications field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureApplications() bool {
+	if o == nil || o.CanConfigureApplications == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureApplications
+}
+
+// GetCanConfigureApplicationsOk returns a tuple with the CanConfigureApplications field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureApplicationsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureApplications == nil {
+		return nil, false
+	}
+	return o.CanConfigureApplications, true
+}
+
+// HasCanConfigureApplications returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureApplications() bool {
+	if o != nil && o.CanConfigureApplications != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureApplications gets a reference to the given bool and assigns it to the CanConfigureApplications field.
+func (o *Role) SetCanConfigureApplications(v bool) {
+	o.CanConfigureApplications = &v
+}
+
+// GetCanConfigureTeams returns the CanConfigureTeams field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureTeams() bool {
+	if o == nil || o.CanConfigureTeams == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureTeams
+}
+
+// GetCanConfigureTeamsOk returns a tuple with the CanConfigureTeams field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureTeamsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureTeams == nil {
+		return nil, false
+	}
+	return o.CanConfigureTeams, true
+}
+
+// HasCanConfigureTeams returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureTeams() bool {
+	if o != nil && o.CanConfigureTeams != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureTeams gets a reference to the given bool and assigns it to the CanConfigureTeams field.
+func (o *Role) SetCanConfigureTeams(v bool) {
+	o.CanConfigureTeams = &v
+}
+
+// GetRestrictedAccess returns the RestrictedAccess field value if set, zero value otherwise.
+func (o *Role) GetRestrictedAccess() bool {
+	if o == nil || o.RestrictedAccess == nil {
+		var ret bool
+		return ret
+	}
+	return *o.RestrictedAccess
+}
+
+// GetRestrictedAccessOk returns a tuple with the RestrictedAccess field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetRestrictedAccessOk() (*bool, bool) {
+	if o == nil || o.RestrictedAccess == nil {
+		return nil, false
+	}
+	return o.RestrictedAccess, true
+}
+
+// HasRestrictedAccess returns a boolean if a field has been set.
+func (o *Role) HasRestrictedAccess() bool {
+	if o != nil && o.RestrictedAccess != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetRestrictedAccess gets a reference to the given bool and assigns it to the RestrictedAccess field.
+func (o *Role) SetRestrictedAccess(v bool) {
+	o.RestrictedAccess = &v
+}
+
+// GetCanConfigureReleases returns the CanConfigureReleases field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureReleases() bool {
+	if o == nil || o.CanConfigureReleases == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureReleases
+}
+
+// GetCanConfigureReleasesOk returns a tuple with the CanConfigureReleases field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureReleasesOk() (*bool, bool) {
+	if o == nil || o.CanConfigureReleases == nil {
+		return nil, false
+	}
+	return o.CanConfigureReleases, true
+}
+
+// HasCanConfigureReleases returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureReleases() bool {
+	if o != nil && o.CanConfigureReleases != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureReleases gets a reference to the given bool and assigns it to the CanConfigureReleases field.
+func (o *Role) SetCanConfigureReleases(v bool) {
+	o.CanConfigureReleases = &v
+}
+
+// GetCanConfigureLogManagement returns the CanConfigureLogManagement field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureLogManagement() bool {
+	if o == nil || o.CanConfigureLogManagement == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureLogManagement
+}
+
+// GetCanConfigureLogManagementOk returns a tuple with the CanConfigureLogManagement field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureLogManagementOk() (*bool, bool) {
+	if o == nil || o.CanConfigureLogManagement == nil {
+		return nil, false
+	}
+	return o.CanConfigureLogManagement, true
+}
+
+// HasCanConfigureLogManagement returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureLogManagement() bool {
+	if o != nil && o.CanConfigureLogManagement != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureLogManagement gets a reference to the given bool and assigns it to the CanConfigureLogManagement field.
+func (o *Role) SetCanConfigureLogManagement(v bool) {
+	o.CanConfigureLogManagement = &v
+}
+
+// GetCanCreatePublicCustomDashboards returns the CanCreatePublicCustomDashboards field value if set, zero value otherwise.
+func (o *Role) GetCanCreatePublicCustomDashboards() bool {
+	if o == nil || o.CanCreatePublicCustomDashboards == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanCreatePublicCustomDashboards
+}
+
+// GetCanCreatePublicCustomDashboardsOk returns a tuple with the CanCreatePublicCustomDashboards field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanCreatePublicCustomDashboardsOk() (*bool, bool) {
+	if o == nil || o.CanCreatePublicCustomDashboards == nil {
+		return nil, false
+	}
+	return o.CanCreatePublicCustomDashboards, true
+}
+
+// HasCanCreatePublicCustomDashboards returns a boolean if a field has been set.
+func (o *Role) HasCanCreatePublicCustomDashboards() bool {
+	if o != nil && o.CanCreatePublicCustomDashboards != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanCreatePublicCustomDashboards gets a reference to the given bool and assigns it to the CanCreatePublicCustomDashboards field.
+func (o *Role) SetCanCreatePublicCustomDashboards(v bool) {
+	o.CanCreatePublicCustomDashboards = &v
+}
+
+// GetCanViewLogs returns the CanViewLogs field value if set, zero value otherwise.
+func (o *Role) GetCanViewLogs() bool {
+	if o == nil || o.CanViewLogs == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanViewLogs
+}
+
+// GetCanViewLogsOk returns a tuple with the CanViewLogs field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanViewLogsOk() (*bool, bool) {
+	if o == nil || o.CanViewLogs == nil {
+		return nil, false
+	}
+	return o.CanViewLogs, true
+}
+
+// HasCanViewLogs returns a boolean if a field has been set.
+func (o *Role) HasCanViewLogs() bool {
+	if o != nil && o.CanViewLogs != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanViewLogs gets a reference to the given bool and assigns it to the CanViewLogs field.
+func (o *Role) SetCanViewLogs(v bool) {
+	o.CanViewLogs = &v
+}
+
+// GetCanViewTraceDetails returns the CanViewTraceDetails field value if set, zero value otherwise.
+func (o *Role) GetCanViewTraceDetails() bool {
+	if o == nil || o.CanViewTraceDetails == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanViewTraceDetails
+}
+
+// GetCanViewTraceDetailsOk returns a tuple with the CanViewTraceDetails field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanViewTraceDetailsOk() (*bool, bool) {
+	if o == nil || o.CanViewTraceDetails == nil {
+		return nil, false
+	}
+	return o.CanViewTraceDetails, true
+}
+
+// HasCanViewTraceDetails returns a boolean if a field has been set.
+func (o *Role) HasCanViewTraceDetails() bool {
+	if o != nil && o.CanViewTraceDetails != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanViewTraceDetails gets a reference to the given bool and assigns it to the CanViewTraceDetails field.
+func (o *Role) SetCanViewTraceDetails(v bool) {
+	o.CanViewTraceDetails = &v
+}
+
+// GetCanConfigureSessionSettings returns the CanConfigureSessionSettings field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureSessionSettings() bool {
+	if o == nil || o.CanConfigureSessionSettings == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureSessionSettings
+}
+
+// GetCanConfigureSessionSettingsOk returns a tuple with the CanConfigureSessionSettings field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureSessionSettingsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureSessionSettings == nil {
+		return nil, false
+	}
+	return o.CanConfigureSessionSettings, true
+}
+
+// HasCanConfigureSessionSettings returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureSessionSettings() bool {
+	if o != nil && o.CanConfigureSessionSettings != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureSessionSettings gets a reference to the given bool and assigns it to the CanConfigureSessionSettings field.
+func (o *Role) SetCanConfigureSessionSettings(v bool) {
+	o.CanConfigureSessionSettings = &v
+}
+
+// GetCanConfigureServiceLevelIndicators returns the CanConfigureServiceLevelIndicators field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureServiceLevelIndicators() bool {
+	if o == nil || o.CanConfigureServiceLevelIndicators == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureServiceLevelIndicators
+}
+
+// GetCanConfigureServiceLevelIndicatorsOk returns a tuple with the CanConfigureServiceLevelIndicators field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureServiceLevelIndicatorsOk() (*bool, bool) {
+	if o == nil || o.CanConfigureServiceLevelIndicators == nil {
+		return nil, false
+	}
+	return o.CanConfigureServiceLevelIndicators, true
+}
+
+// HasCanConfigureServiceLevelIndicators returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureServiceLevelIndicators() bool {
+	if o != nil && o.CanConfigureServiceLevelIndicators != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureServiceLevelIndicators gets a reference to the given bool and assigns it to the CanConfigureServiceLevelIndicators field.
+func (o *Role) SetCanConfigureServiceLevelIndicators(v bool) {
+	o.CanConfigureServiceLevelIndicators = &v
+}
+
+// GetCanConfigureGlobalAlertPayload returns the CanConfigureGlobalAlertPayload field value if set, zero value otherwise.
+func (o *Role) GetCanConfigureGlobalAlertPayload() bool {
+	if o == nil || o.CanConfigureGlobalAlertPayload == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanConfigureGlobalAlertPayload
+}
+
+// GetCanConfigureGlobalAlertPayloadOk returns a tuple with the CanConfigureGlobalAlertPayload field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanConfigureGlobalAlertPayloadOk() (*bool, bool) {
+	if o == nil || o.CanConfigureGlobalAlertPayload == nil {
+		return nil, false
+	}
+	return o.CanConfigureGlobalAlertPayload, true
+}
+
+// HasCanConfigureGlobalAlertPayload returns a boolean if a field has been set.
+func (o *Role) HasCanConfigureGlobalAlertPayload() bool {
+	if o != nil && o.CanConfigureGlobalAlertPayload != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanConfigureGlobalAlertPayload gets a reference to the given bool and assigns it to the CanConfigureGlobalAlertPayload field.
+func (o *Role) SetCanConfigureGlobalAlertPayload(v bool) {
+	o.CanConfigureGlobalAlertPayload = &v
+}
+
+// GetCanViewAccountAndBillingInformation returns the CanViewAccountAndBillingInformation field value if set, zero value otherwise.
+func (o *Role) GetCanViewAccountAndBillingInformation() bool {
+	if o == nil || o.CanViewAccountAndBillingInformation == nil {
+		var ret bool
+		return ret
+	}
+	return *o.CanViewAccountAndBillingInformation
+}
+
+// GetCanViewAccountAndBillingInformationOk returns a tuple with the CanViewAccountAndBillingInformation field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Role) GetCanViewAccountAndBillingInformationOk() (*bool, bool) {
+	if o == nil || o.CanViewAccountAndBillingInformation == nil {
+		return nil, false
+	}
+	return o.CanViewAccountAndBillingInformation, true
+}
+
+// HasCanViewAccountAndBillingInformation returns a boolean if a field has been set.
+func (o *Role) HasCanViewAccountAndBillingInformation() bool {
+	if o != nil && o.CanViewAccountAndBillingInformation != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetCanViewAccountAndBillingInformation gets a reference to the given bool and assigns it to the CanViewAccountAndBillingInformation field.
+func (o *Role) SetCanViewAccountAndBillingInformation(v bool) {
+	o.CanViewAccountAndBillingInformation = &v
+}
+
+func (o Role) MarshalJSON() ([]byte, error) {
+	toSerialize := map[string]interface{}{}
+	if true {
+		toSerialize["id"] = o.Id
+	}
+	if true {
+		toSerialize["name"] = o.Name
+	}
+	if o.CanConfigureServiceMapping != nil {
+		toSerialize["canConfigureServiceMapping"] = o.CanConfigureServiceMapping
+	}
+	if o.CanConfigureEumApplications != nil {
+		toSerialize["canConfigureEumApplications"] = o.CanConfigureEumApplications
+	}
+	if o.CanConfigureMobileAppMonitoring != nil {
+		toSerialize["canConfigureMobileAppMonitoring"] = o.CanConfigureMobileAppMonitoring
+	}
+	if o.CanConfigureUsers != nil {
+		toSerialize["canConfigureUsers"] = o.CanConfigureUsers
+	}
+	if o.CanInstallNewAgents != nil {
+		toSerialize["canInstallNewAgents"] = o.CanInstallNewAgents
+	}
+	if o.CanSeeUsageInformation != nil {
+		toSerialize["canSeeUsageInformation"] = o.CanSeeUsageInformation
+	}
+	if o.CanConfigureIntegrations != nil {
+		toSerialize["canConfigureIntegrations"] = o.CanConfigureIntegrations
+	}
+	if o.CanSeeOnPremLicenseInformation != nil {
+		toSerialize["canSeeOnPremLicenseInformation"] = o.CanSeeOnPremLicenseInformation
+	}
+	if o.CanConfigureRoles != nil {
+		toSerialize["canConfigureRoles"] = o.CanConfigureRoles
+	}
+	if o.CanConfigureCustomAlerts != nil {
+		toSerialize["canConfigureCustomAlerts"] = o.CanConfigureCustomAlerts
+	}
+	if o.CanConfigureApiTokens != nil {
+		toSerialize["canConfigureApiTokens"] = o.CanConfigureApiTokens
+	}
+	if o.CanConfigureAgentRunMode != nil {
+		toSerialize["canConfigureAgentRunMode"] = o.CanConfigureAgentRunMode
+	}
+	if o.CanViewAuditLog != nil {
+		toSerialize["canViewAuditLog"] = o.CanViewAuditLog
+	}
+	if o.CanConfigureObjectives != nil {
+		toSerialize["canConfigureObjectives"] = o.CanConfigureObjectives
+	}
+	if o.CanConfigureAgents != nil {
+		toSerialize["canConfigureAgents"] = o.CanConfigureAgents
+	}
+	if o.CanConfigureAuthenticationMethods != nil {
+		toSerialize["canConfigureAuthenticationMethods"] = o.CanConfigureAuthenticationMethods
+	}
+	if o.CanConfigureApplications != nil {
+		toSerialize["canConfigureApplications"] = o.CanConfigureApplications
+	}
+	if o.CanConfigureTeams != nil {
+		toSerialize["canConfigureTeams"] = o.CanConfigureTeams
+	}
+	if o.RestrictedAccess != nil {
+		toSerialize["restrictedAccess"] = o.RestrictedAccess
+	}
+	if o.CanConfigureReleases != nil {
+		toSerialize["canConfigureReleases"] = o.CanConfigureReleases
+	}
+	if o.CanConfigureLogManagement != nil {
+		toSerialize["canConfigureLogManagement"] = o.CanConfigureLogManagement
+	}
+	if o.CanCreatePublicCustomDashboards != nil {
+		toSerialize["canCreatePublicCustomDashboards"] = o.CanCreatePublicCustomDashboards
+	}
+	if o.CanViewLogs != nil {
+		toSerialize["canViewLogs"] = o.CanViewLogs
+	}
+	if o.CanViewTraceDetails != nil {
+		toSerialize["canViewTraceDetails"] = o.CanViewTraceDetails
+	}
+	if o.CanConfigureSessionSettings != nil {
+		toSerialize["canConfigureSessionSettings"] = o.CanConfigureSessionSettings
+	}
+	if o.CanConfigureServiceLevelIndicators != nil {
+		toSerialize["canConfigureServiceLevelIndicators"] = o.CanConfigureServiceLevelIndicators
+	}
+	if o.CanConfigureGlobalAlertPayload != nil {
+		toSerialize["canConfigureGlobalAlertPayload"] = o.CanConfigureGlobalAlertPayload
+	}
+	if o.CanViewAccountAndBillingInformation != nil {
+		toSerialize["canViewAccountAndBillingInformation"] = o.CanViewAccountAndBillingInformation
+	}
+	return json.Marshal(toSerialize)
+}
+
+type NullableRole struct {
+	value *Role
+	isSet bool
+}
+
+func (v NullableRole) Get() *Role {
+	return v.value
+}
+
+func (v *NullableRole) Set(val *Role) {
+	v.value = val
+	v.isSet = true
+}
+
+func (v NullableRole) IsSet() bool {
+	return v.isSet
+}
+
+func (v *NullableRole) Unset() {
+	v.value = nil
+	v.isSet = false
+}
+
+func NewNullableRole(val *Role) *NullableRole {
+	return &NullableRole{value: val, isSet: true}
+}
+
+func (v NullableRole) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.value)
+}
+
+func (v *NullableRole) UnmarshalJSON(src []byte) error {
+	v.isSet = true
+	return json.Unmarshal(src, &v.value)
 }

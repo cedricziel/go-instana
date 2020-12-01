@@ -5,10 +5,10 @@ if [[ ! -f "resources/openapi.yaml" ]]; then
 fi
 
 if [[ ! -f openapi-generator-cli.jar ]]; then
-	wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar
+	wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.0.0-beta3/openapi-generator-cli-5.0.0-beta3.jar -O openapi-generator-cli.jar
 fi
 
-git rm -r -q api docs *.go
+git rm -r -q instana/api instana/docs instana/*.go
 
 GO_POST_PROCESS_FILE="gofmt -s -w" java -jar openapi-generator-cli.jar generate -i resources/openapi.yaml -g go \
     -o instana \
@@ -16,7 +16,7 @@ GO_POST_PROCESS_FILE="gofmt -s -w" java -jar openapi-generator-cli.jar generate 
     --git-user-id cedricziel \
     --additional-properties packageName=instana \
     --additional-properties isGoSubmodule=true \
-    --additional-properties packageVersion=1.190.696 \
+    --additional-properties packageVersion=1.192.86 \
     --type-mappings=object=interface{} \
     --enable-post-process-file \
     --skip-validate-spec

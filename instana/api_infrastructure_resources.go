@@ -1,18 +1,18 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
+
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
 
 package instana
 
 import (
 	_context "context"
-	"github.com/antihax/optional"
 	_ioutil "io/ioutil"
 	_nethttp "net/http"
 	_neturl "net/url"
@@ -27,12 +27,32 @@ var (
 // InfrastructureResourcesApiService InfrastructureResourcesApi service
 type InfrastructureResourcesApiService service
 
+type ApiGetInfrastructureViewTreeRequest struct {
+	ctx        _context.Context
+	ApiService *InfrastructureResourcesApiService
+}
+
+func (r ApiGetInfrastructureViewTreeRequest) Execute() (TreeNodeResult, *_nethttp.Response, error) {
+	return r.ApiService.GetInfrastructureViewTreeExecute(r)
+}
+
 /*
-GetInfrastructureViewTree Get view tree
+ * GetInfrastructureViewTree Get view tree
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-@return TreeNodeResult
-*/
-func (a *InfrastructureResourcesApiService) GetInfrastructureViewTree(ctx _context.Context) (TreeNodeResult, *_nethttp.Response, error) {
+ * @return ApiGetInfrastructureViewTreeRequest
+ */
+func (a *InfrastructureResourcesApiService) GetInfrastructureViewTree(ctx _context.Context) ApiGetInfrastructureViewTreeRequest {
+	return ApiGetInfrastructureViewTreeRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return TreeNodeResult
+ */
+func (a *InfrastructureResourcesApiService) GetInfrastructureViewTreeExecute(r ApiGetInfrastructureViewTreeRequest) (TreeNodeResult, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -42,8 +62,13 @@ func (a *InfrastructureResourcesApiService) GetInfrastructureViewTree(ctx _conte
 		localVarReturnValue  TreeNodeResult
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/infrastructure-monitoring/graph/views"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "InfrastructureResourcesApiService.GetInfrastructureViewTree")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/infrastructure-monitoring/graph/views"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
@@ -65,24 +90,26 @@ func (a *InfrastructureResourcesApiService) GetInfrastructureViewTree(ctx _conte
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -120,12 +147,32 @@ func (a *InfrastructureResourcesApiService) GetInfrastructureViewTree(ctx _conte
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiGetMonitoringStateRequest struct {
+	ctx        _context.Context
+	ApiService *InfrastructureResourcesApiService
+}
+
+func (r ApiGetMonitoringStateRequest) Execute() (MonitoringState, *_nethttp.Response, error) {
+	return r.ApiService.GetMonitoringStateExecute(r)
+}
+
 /*
-GetMonitoringState Monitored host count
+ * GetMonitoringState Monitored host count
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-@return MonitoringState
-*/
-func (a *InfrastructureResourcesApiService) GetMonitoringState(ctx _context.Context) (MonitoringState, *_nethttp.Response, error) {
+ * @return ApiGetMonitoringStateRequest
+ */
+func (a *InfrastructureResourcesApiService) GetMonitoringState(ctx _context.Context) ApiGetMonitoringStateRequest {
+	return ApiGetMonitoringStateRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return MonitoringState
+ */
+func (a *InfrastructureResourcesApiService) GetMonitoringStateExecute(r ApiGetMonitoringStateRequest) (MonitoringState, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -135,8 +182,13 @@ func (a *InfrastructureResourcesApiService) GetMonitoringState(ctx _context.Cont
 		localVarReturnValue  MonitoringState
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/infrastructure-monitoring/monitoring-state"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "InfrastructureResourcesApiService.GetMonitoringState")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/infrastructure-monitoring/monitoring-state"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
@@ -158,24 +210,26 @@ func (a *InfrastructureResourcesApiService) GetMonitoringState(ctx _context.Cont
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -213,13 +267,35 @@ func (a *InfrastructureResourcesApiService) GetMonitoringState(ctx _context.Cont
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+type ApiGetRelatedHostsRequest struct {
+	ctx        _context.Context
+	ApiService *InfrastructureResourcesApiService
+	snapshotId string
+}
+
+func (r ApiGetRelatedHostsRequest) Execute() ([]string, *_nethttp.Response, error) {
+	return r.ApiService.GetRelatedHostsExecute(r)
+}
+
 /*
-GetRelatedHosts Related hosts
+ * GetRelatedHosts Related hosts
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param snapshotId
-@return []string
-*/
-func (a *InfrastructureResourcesApiService) GetRelatedHosts(ctx _context.Context, snapshotId string) ([]string, *_nethttp.Response, error) {
+ * @return ApiGetRelatedHostsRequest
+ */
+func (a *InfrastructureResourcesApiService) GetRelatedHosts(ctx _context.Context, snapshotId string) ApiGetRelatedHostsRequest {
+	return ApiGetRelatedHostsRequest{
+		ApiService: a,
+		ctx:        ctx,
+		snapshotId: snapshotId,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []string
+ */
+func (a *InfrastructureResourcesApiService) GetRelatedHostsExecute(r ApiGetRelatedHostsRequest) ([]string, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -229,9 +305,13 @@ func (a *InfrastructureResourcesApiService) GetRelatedHosts(ctx _context.Context
 		localVarReturnValue  []string
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/infrastructure-monitoring/graph/related-hosts/{snapshotId}"
-	localVarPath = strings.Replace(localVarPath, "{"+"snapshotId"+"}", _neturl.QueryEscape(parameterToString(snapshotId, "")), -1)
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "InfrastructureResourcesApiService.GetRelatedHosts")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/infrastructure-monitoring/graph/related-hosts/{snapshotId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"snapshotId"+"}", _neturl.PathEscape(parameterToString(r.snapshotId, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -254,24 +334,26 @@ func (a *InfrastructureResourcesApiService) GetRelatedHosts(ctx _context.Context
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -309,28 +391,61 @@ func (a *InfrastructureResourcesApiService) GetRelatedHosts(ctx _context.Context
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-// SoftwareVersionsOpts Optional parameters for the method 'SoftwareVersions'
-type SoftwareVersionsOpts struct {
-	Time    optional.Int64
-	Origin  optional.String
-	Type_   optional.String
-	Name    optional.String
-	Version optional.String
+type ApiSoftwareVersionsRequest struct {
+	ctx        _context.Context
+	ApiService *InfrastructureResourcesApiService
+	time       *int64
+	origin     *string
+	type_      *string
+	name       *string
+	version    *string
+}
+
+func (r ApiSoftwareVersionsRequest) Time(time int64) ApiSoftwareVersionsRequest {
+	r.time = &time
+	return r
+}
+func (r ApiSoftwareVersionsRequest) Origin(origin string) ApiSoftwareVersionsRequest {
+	r.origin = &origin
+	return r
+}
+func (r ApiSoftwareVersionsRequest) Type_(type_ string) ApiSoftwareVersionsRequest {
+	r.type_ = &type_
+	return r
+}
+func (r ApiSoftwareVersionsRequest) Name(name string) ApiSoftwareVersionsRequest {
+	r.name = &name
+	return r
+}
+func (r ApiSoftwareVersionsRequest) Version(version string) ApiSoftwareVersionsRequest {
+	r.version = &version
+	return r
+}
+
+func (r ApiSoftwareVersionsRequest) Execute() ([]SoftwareVersion, *_nethttp.Response, error) {
+	return r.ApiService.SoftwareVersionsExecute(r)
 }
 
 /*
-SoftwareVersions Get installed software
-Retrieve information about the software you are running. This includes runtime and package manager information.  The &#x60;name&#x60;, &#x60;version&#x60;, &#x60;origin&#x60; and &#x60;type&#x60; parameters are optional filters that can be used to reduce the result data set.
+ * SoftwareVersions Get installed software
+ * Retrieve information about the software you are running. This includes runtime and package manager information.
+
+The `name`, `version`, `origin` and `type` parameters are optional filters that can be used to reduce the result data set.
  * @param ctx _context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *SoftwareVersionsOpts - Optional Parameters:
- * @param "Time" (optional.Int64) -
- * @param "Origin" (optional.String) -
- * @param "Type_" (optional.String) -
- * @param "Name" (optional.String) -
- * @param "Version" (optional.String) -
-@return []SoftwareVersion
+ * @return ApiSoftwareVersionsRequest
 */
-func (a *InfrastructureResourcesApiService) SoftwareVersions(ctx _context.Context, localVarOptionals *SoftwareVersionsOpts) ([]SoftwareVersion, *_nethttp.Response, error) {
+func (a *InfrastructureResourcesApiService) SoftwareVersions(ctx _context.Context) ApiSoftwareVersionsRequest {
+	return ApiSoftwareVersionsRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+/*
+ * Execute executes the request
+ * @return []SoftwareVersion
+ */
+func (a *InfrastructureResourcesApiService) SoftwareVersionsExecute(r ApiSoftwareVersionsRequest) ([]SoftwareVersion, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodGet
 		localVarPostBody     interface{}
@@ -340,26 +455,31 @@ func (a *InfrastructureResourcesApiService) SoftwareVersions(ctx _context.Contex
 		localVarReturnValue  []SoftwareVersion
 	)
 
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/api/infrastructure-monitoring/software/versions"
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "InfrastructureResourcesApiService.SoftwareVersions")
+	if err != nil {
+		return localVarReturnValue, nil, GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/infrastructure-monitoring/software/versions"
+
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
 	localVarFormParams := _neturl.Values{}
 
-	if localVarOptionals != nil && localVarOptionals.Time.IsSet() {
-		localVarQueryParams.Add("time", parameterToString(localVarOptionals.Time.Value(), ""))
+	if r.time != nil {
+		localVarQueryParams.Add("time", parameterToString(*r.time, ""))
 	}
-	if localVarOptionals != nil && localVarOptionals.Origin.IsSet() {
-		localVarQueryParams.Add("origin", parameterToString(localVarOptionals.Origin.Value(), ""))
+	if r.origin != nil {
+		localVarQueryParams.Add("origin", parameterToString(*r.origin, ""))
 	}
-	if localVarOptionals != nil && localVarOptionals.Type_.IsSet() {
-		localVarQueryParams.Add("type", parameterToString(localVarOptionals.Type_.Value(), ""))
+	if r.type_ != nil {
+		localVarQueryParams.Add("type", parameterToString(*r.type_, ""))
 	}
-	if localVarOptionals != nil && localVarOptionals.Name.IsSet() {
-		localVarQueryParams.Add("name", parameterToString(localVarOptionals.Name.Value(), ""))
+	if r.name != nil {
+		localVarQueryParams.Add("name", parameterToString(*r.name, ""))
 	}
-	if localVarOptionals != nil && localVarOptionals.Version.IsSet() {
-		localVarQueryParams.Add("version", parameterToString(localVarOptionals.Version.Value(), ""))
+	if r.version != nil {
+		localVarQueryParams.Add("version", parameterToString(*r.version, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -378,24 +498,26 @@ func (a *InfrastructureResourcesApiService) SoftwareVersions(ctx _context.Contex
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
-	if ctx != nil {
+	if r.ctx != nil {
 		// API Key Authentication
-		if auth, ok := ctx.Value(ContextAPIKey).(APIKey); ok {
-			var key string
-			if auth.Prefix != "" {
-				key = auth.Prefix + " " + auth.Key
-			} else {
-				key = auth.Key
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["ApiKeyAuth"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["authorization"] = key
 			}
-			localVarHeaderParams["authorization"] = key
 		}
 	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
 	}
 
-	localVarHTTPResponse, err := a.client.callAPI(r)
+	localVarHTTPResponse, err := a.client.callAPI(req)
 	if err != nil || localVarHTTPResponse == nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}

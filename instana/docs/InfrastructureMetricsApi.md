@@ -12,29 +12,51 @@ Method | HTTP request | Description
 
 ## GetInfrastructureMetrics
 
-> InfrastructureMetricResult GetInfrastructureMetrics(ctx, optional)
+> InfrastructureMetricResult GetInfrastructureMetrics(ctx).Offline(offline).GetCombinedMetrics(getCombinedMetrics).Execute()
 
 Get infrastructure metrics
 
-- The **offline** parameter is used to allow deeper visibility into snapshots. Set to `false`, the query will return all snapshots that are still available on the given **to** timestamp. However, set to `true`, the query will return all snapshots that have been active within the time window, this must at least include the online result and snapshots terminated within this time.  
+### Example
 
-### Required Parameters
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    offline := true // bool |  (optional)
+    getCombinedMetrics := *openapiclient.NewGetCombinedMetrics("Plugin_example", []string{"Metrics_example"}) // GetCombinedMetrics |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureMetricsApi.GetInfrastructureMetrics(context.Background()).Offline(offline).GetCombinedMetrics(getCombinedMetrics).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureMetricsApi.GetInfrastructureMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetInfrastructureMetrics`: InfrastructureMetricResult
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureMetricsApi.GetInfrastructureMetrics`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetInfrastructureMetricsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetInfrastructureMetricsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetInfrastructureMetricsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **offline** | **optional.Bool**|  | 
- **getCombinedMetrics** | [**optional.Interface of GetCombinedMetrics**](GetCombinedMetrics.md)|  | 
+ **offline** | **bool** |  | 
+ **getCombinedMetrics** | [**GetCombinedMetrics**](GetCombinedMetrics.md) |  | 
 
 ### Return type
 
@@ -56,29 +78,57 @@ Name | Type | Description  | Notes
 
 ## GetSnapshot
 
-> SnapshotItem GetSnapshot(ctx, id, optional)
+> SnapshotItem GetSnapshot(ctx, id).To(to).WindowSize(windowSize).Execute()
 
 Get snapshot details
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    id := "id_example" // string | 
+    to := int64(789) // int64 |  (optional)
+    windowSize := int64(789) // int64 |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureMetricsApi.GetSnapshot(context.Background(), id).To(to).WindowSize(windowSize).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureMetricsApi.GetSnapshot``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetSnapshot`: SnapshotItem
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureMetricsApi.GetSnapshot`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string**|  | 
- **optional** | ***GetSnapshotOpts** | optional parameters | nil if no parameters
+**id** | **string** |  | 
 
-### Optional Parameters
+### Other Parameters
 
-Optional parameters are passed through a pointer to a GetSnapshotOpts struct
+Other parameters are passed through a pointer to a apiGetSnapshotRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
- **to** | **optional.Int64**|  | 
- **windowSize** | **optional.Int64**|  | 
+ **to** | **int64** |  | 
+ **windowSize** | **int64** |  | 
 
 ### Return type
 
@@ -100,33 +150,59 @@ Name | Type | Description  | Notes
 
 ## GetSnapshots
 
-> SnapshotResult GetSnapshots(ctx, optional)
+> SnapshotResult GetSnapshots(ctx).Query(query).To(to).WindowSize(windowSize).Size(size).Plugin(plugin).Offline(offline).Execute()
 
 Search snapshots
 
-These APIs can be used to retrieve information about hosts, processes, JVMs and other entities that we are calling snapshots. A snapshot represents static information about an entity as it was at a specific point in time. To clarify:  **Static information** is any information which is seldom changing, e.g. process IDs, host FQDNs or a list of host hard disks. The counterpart to static information are metrics which have a much higher change rate, e.g. host CPU usage or JVM garbage collection activity. Snapshots only contain static information.  - Snapshots are **versioned** and represent an entity's state for a specific point in time. While snapshots only contain static information, even that information may change. For example you may add another hard disk to a server. For such a change, a new snapshot would be created.  - The **size** parameter can be used in order to limit the maximum number of retrieved snapshots.  - The **offline** parameter is used to allow deeper visibility into snapshots. Set to `false`, the query will return all snapshots that are still available on the given **to** timestamp. However, set to `true`, the query will return all snapshots that have been active within the time window, this must at least include the online result and snapshots terminated within this time.  
+### Example
 
-### Required Parameters
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    query := "query_example" // string |  (optional)
+    to := int64(789) // int64 |  (optional)
+    windowSize := int64(789) // int64 |  (optional)
+    size := int32(56) // int32 |  (optional)
+    plugin := "plugin_example" // string |  (optional)
+    offline := true // bool |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureMetricsApi.GetSnapshots(context.Background()).Query(query).To(to).WindowSize(windowSize).Size(size).Plugin(plugin).Offline(offline).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureMetricsApi.GetSnapshots``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetSnapshots`: SnapshotResult
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureMetricsApi.GetSnapshots`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetSnapshotsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
- **optional** | ***GetSnapshotsOpts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-
-Optional parameters are passed through a pointer to a GetSnapshotsOpts struct
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **query** | **optional.String**|  | 
- **to** | **optional.Int64**|  | 
- **windowSize** | **optional.Int64**|  | 
- **size** | **optional.Int32**|  | 
- **plugin** | **optional.String**|  | 
- **offline** | **optional.Bool**|  | 
+ **query** | **string** |  | 
+ **to** | **int64** |  | 
+ **windowSize** | **int64** |  | 
+ **size** | **int32** |  | 
+ **plugin** | **string** |  | 
+ **offline** | **bool** |  | 
 
 ### Return type
 

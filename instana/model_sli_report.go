@@ -1,22 +1,330 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
+
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
 
 package instana
 
+import (
+	"encoding/json"
+)
+
 // SliReport struct for SliReport
 type SliReport struct {
-	Sli                   float64          `json:"sli,omitempty"`
-	Slo                   float64          `json:"slo,omitempty"`
-	TotalErrorBudget      int32            `json:"totalErrorBudget,omitempty"`
-	ErrorBudgetRemaining  int32            `json:"errorBudgetRemaining,omitempty"`
-	FromTimestamp         int64            `json:"fromTimestamp,omitempty"`
-	ToTimestamp           int64            `json:"toTimestamp,omitempty"`
-	ViolationDistribution map[string]int32 `json:"violationDistribution,omitempty"`
+	Sli                   *float64          `json:"sli,omitempty"`
+	Slo                   *float64          `json:"slo,omitempty"`
+	TotalErrorBudget      *int32            `json:"totalErrorBudget,omitempty"`
+	ErrorBudgetRemaining  *int32            `json:"errorBudgetRemaining,omitempty"`
+	FromTimestamp         *int64            `json:"fromTimestamp,omitempty"`
+	ToTimestamp           *int64            `json:"toTimestamp,omitempty"`
+	ViolationDistribution *map[string]int32 `json:"violationDistribution,omitempty"`
+}
+
+// NewSliReport instantiates a new SliReport object
+// This constructor will assign default values to properties that have it defined,
+// and makes sure properties required by API are set, but the set of arguments
+// will change when the set of required properties is changed
+func NewSliReport() *SliReport {
+	this := SliReport{}
+	return &this
+}
+
+// NewSliReportWithDefaults instantiates a new SliReport object
+// This constructor will only assign default values to properties that have it defined,
+// but it doesn't guarantee that properties required by API are set
+func NewSliReportWithDefaults() *SliReport {
+	this := SliReport{}
+	return &this
+}
+
+// GetSli returns the Sli field value if set, zero value otherwise.
+func (o *SliReport) GetSli() float64 {
+	if o == nil || o.Sli == nil {
+		var ret float64
+		return ret
+	}
+	return *o.Sli
+}
+
+// GetSliOk returns a tuple with the Sli field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SliReport) GetSliOk() (*float64, bool) {
+	if o == nil || o.Sli == nil {
+		return nil, false
+	}
+	return o.Sli, true
+}
+
+// HasSli returns a boolean if a field has been set.
+func (o *SliReport) HasSli() bool {
+	if o != nil && o.Sli != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetSli gets a reference to the given float64 and assigns it to the Sli field.
+func (o *SliReport) SetSli(v float64) {
+	o.Sli = &v
+}
+
+// GetSlo returns the Slo field value if set, zero value otherwise.
+func (o *SliReport) GetSlo() float64 {
+	if o == nil || o.Slo == nil {
+		var ret float64
+		return ret
+	}
+	return *o.Slo
+}
+
+// GetSloOk returns a tuple with the Slo field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SliReport) GetSloOk() (*float64, bool) {
+	if o == nil || o.Slo == nil {
+		return nil, false
+	}
+	return o.Slo, true
+}
+
+// HasSlo returns a boolean if a field has been set.
+func (o *SliReport) HasSlo() bool {
+	if o != nil && o.Slo != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetSlo gets a reference to the given float64 and assigns it to the Slo field.
+func (o *SliReport) SetSlo(v float64) {
+	o.Slo = &v
+}
+
+// GetTotalErrorBudget returns the TotalErrorBudget field value if set, zero value otherwise.
+func (o *SliReport) GetTotalErrorBudget() int32 {
+	if o == nil || o.TotalErrorBudget == nil {
+		var ret int32
+		return ret
+	}
+	return *o.TotalErrorBudget
+}
+
+// GetTotalErrorBudgetOk returns a tuple with the TotalErrorBudget field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SliReport) GetTotalErrorBudgetOk() (*int32, bool) {
+	if o == nil || o.TotalErrorBudget == nil {
+		return nil, false
+	}
+	return o.TotalErrorBudget, true
+}
+
+// HasTotalErrorBudget returns a boolean if a field has been set.
+func (o *SliReport) HasTotalErrorBudget() bool {
+	if o != nil && o.TotalErrorBudget != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetTotalErrorBudget gets a reference to the given int32 and assigns it to the TotalErrorBudget field.
+func (o *SliReport) SetTotalErrorBudget(v int32) {
+	o.TotalErrorBudget = &v
+}
+
+// GetErrorBudgetRemaining returns the ErrorBudgetRemaining field value if set, zero value otherwise.
+func (o *SliReport) GetErrorBudgetRemaining() int32 {
+	if o == nil || o.ErrorBudgetRemaining == nil {
+		var ret int32
+		return ret
+	}
+	return *o.ErrorBudgetRemaining
+}
+
+// GetErrorBudgetRemainingOk returns a tuple with the ErrorBudgetRemaining field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SliReport) GetErrorBudgetRemainingOk() (*int32, bool) {
+	if o == nil || o.ErrorBudgetRemaining == nil {
+		return nil, false
+	}
+	return o.ErrorBudgetRemaining, true
+}
+
+// HasErrorBudgetRemaining returns a boolean if a field has been set.
+func (o *SliReport) HasErrorBudgetRemaining() bool {
+	if o != nil && o.ErrorBudgetRemaining != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetErrorBudgetRemaining gets a reference to the given int32 and assigns it to the ErrorBudgetRemaining field.
+func (o *SliReport) SetErrorBudgetRemaining(v int32) {
+	o.ErrorBudgetRemaining = &v
+}
+
+// GetFromTimestamp returns the FromTimestamp field value if set, zero value otherwise.
+func (o *SliReport) GetFromTimestamp() int64 {
+	if o == nil || o.FromTimestamp == nil {
+		var ret int64
+		return ret
+	}
+	return *o.FromTimestamp
+}
+
+// GetFromTimestampOk returns a tuple with the FromTimestamp field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SliReport) GetFromTimestampOk() (*int64, bool) {
+	if o == nil || o.FromTimestamp == nil {
+		return nil, false
+	}
+	return o.FromTimestamp, true
+}
+
+// HasFromTimestamp returns a boolean if a field has been set.
+func (o *SliReport) HasFromTimestamp() bool {
+	if o != nil && o.FromTimestamp != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetFromTimestamp gets a reference to the given int64 and assigns it to the FromTimestamp field.
+func (o *SliReport) SetFromTimestamp(v int64) {
+	o.FromTimestamp = &v
+}
+
+// GetToTimestamp returns the ToTimestamp field value if set, zero value otherwise.
+func (o *SliReport) GetToTimestamp() int64 {
+	if o == nil || o.ToTimestamp == nil {
+		var ret int64
+		return ret
+	}
+	return *o.ToTimestamp
+}
+
+// GetToTimestampOk returns a tuple with the ToTimestamp field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SliReport) GetToTimestampOk() (*int64, bool) {
+	if o == nil || o.ToTimestamp == nil {
+		return nil, false
+	}
+	return o.ToTimestamp, true
+}
+
+// HasToTimestamp returns a boolean if a field has been set.
+func (o *SliReport) HasToTimestamp() bool {
+	if o != nil && o.ToTimestamp != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetToTimestamp gets a reference to the given int64 and assigns it to the ToTimestamp field.
+func (o *SliReport) SetToTimestamp(v int64) {
+	o.ToTimestamp = &v
+}
+
+// GetViolationDistribution returns the ViolationDistribution field value if set, zero value otherwise.
+func (o *SliReport) GetViolationDistribution() map[string]int32 {
+	if o == nil || o.ViolationDistribution == nil {
+		var ret map[string]int32
+		return ret
+	}
+	return *o.ViolationDistribution
+}
+
+// GetViolationDistributionOk returns a tuple with the ViolationDistribution field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SliReport) GetViolationDistributionOk() (*map[string]int32, bool) {
+	if o == nil || o.ViolationDistribution == nil {
+		return nil, false
+	}
+	return o.ViolationDistribution, true
+}
+
+// HasViolationDistribution returns a boolean if a field has been set.
+func (o *SliReport) HasViolationDistribution() bool {
+	if o != nil && o.ViolationDistribution != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetViolationDistribution gets a reference to the given map[string]int32 and assigns it to the ViolationDistribution field.
+func (o *SliReport) SetViolationDistribution(v map[string]int32) {
+	o.ViolationDistribution = &v
+}
+
+func (o SliReport) MarshalJSON() ([]byte, error) {
+	toSerialize := map[string]interface{}{}
+	if o.Sli != nil {
+		toSerialize["sli"] = o.Sli
+	}
+	if o.Slo != nil {
+		toSerialize["slo"] = o.Slo
+	}
+	if o.TotalErrorBudget != nil {
+		toSerialize["totalErrorBudget"] = o.TotalErrorBudget
+	}
+	if o.ErrorBudgetRemaining != nil {
+		toSerialize["errorBudgetRemaining"] = o.ErrorBudgetRemaining
+	}
+	if o.FromTimestamp != nil {
+		toSerialize["fromTimestamp"] = o.FromTimestamp
+	}
+	if o.ToTimestamp != nil {
+		toSerialize["toTimestamp"] = o.ToTimestamp
+	}
+	if o.ViolationDistribution != nil {
+		toSerialize["violationDistribution"] = o.ViolationDistribution
+	}
+	return json.Marshal(toSerialize)
+}
+
+type NullableSliReport struct {
+	value *SliReport
+	isSet bool
+}
+
+func (v NullableSliReport) Get() *SliReport {
+	return v.value
+}
+
+func (v *NullableSliReport) Set(val *SliReport) {
+	v.value = val
+	v.isSet = true
+}
+
+func (v NullableSliReport) IsSet() bool {
+	return v.isSet
+}
+
+func (v *NullableSliReport) Unset() {
+	v.value = nil
+	v.isSet = false
+}
+
+func NewNullableSliReport(val *SliReport) *NullableSliReport {
+	return &NullableSliReport{value: val, isSet: true}
+}
+
+func (v NullableSliReport) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.value)
+}
+
+func (v *NullableSliReport) UnmarshalJSON(src []byte) error {
+	v.isSet = true
+	return json.Unmarshal(src, &v.value)
 }

@@ -1,25 +1,431 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
+
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
 
 package instana
 
+import (
+	"encoding/json"
+)
+
 // GetServices struct for GetServices
 type GetServices struct {
-	Pagination               Pagination                   `json:"pagination,omitempty"`
-	Order                    Order                        `json:"order,omitempty"`
-	TimeFrame                TimeFrame                    `json:"timeFrame,omitempty"`
+	Pagination               *Pagination                  `json:"pagination,omitempty"`
+	Order                    *Order                       `json:"order,omitempty"`
+	TimeFrame                *TimeFrame                   `json:"timeFrame,omitempty"`
 	Metrics                  []AppDataMetricConfiguration `json:"metrics"`
-	NameFilter               string                       `json:"nameFilter,omitempty"`
-	ApplicationId            string                       `json:"applicationId,omitempty"`
-	ServiceId                string                       `json:"serviceId,omitempty"`
-	Technologies             []string                     `json:"technologies,omitempty"`
-	ContextScope             string                       `json:"contextScope,omitempty"`
-	ApplicationBoundaryScope string                       `json:"applicationBoundaryScope,omitempty"`
+	NameFilter               *string                      `json:"nameFilter,omitempty"`
+	ApplicationId            *string                      `json:"applicationId,omitempty"`
+	ServiceId                *string                      `json:"serviceId,omitempty"`
+	Technologies             *[]string                    `json:"technologies,omitempty"`
+	ContextScope             *string                      `json:"contextScope,omitempty"`
+	ApplicationBoundaryScope *string                      `json:"applicationBoundaryScope,omitempty"`
+}
+
+// NewGetServices instantiates a new GetServices object
+// This constructor will assign default values to properties that have it defined,
+// and makes sure properties required by API are set, but the set of arguments
+// will change when the set of required properties is changed
+func NewGetServices(metrics []AppDataMetricConfiguration) *GetServices {
+	this := GetServices{}
+	this.Metrics = metrics
+	return &this
+}
+
+// NewGetServicesWithDefaults instantiates a new GetServices object
+// This constructor will only assign default values to properties that have it defined,
+// but it doesn't guarantee that properties required by API are set
+func NewGetServicesWithDefaults() *GetServices {
+	this := GetServices{}
+	return &this
+}
+
+// GetPagination returns the Pagination field value if set, zero value otherwise.
+func (o *GetServices) GetPagination() Pagination {
+	if o == nil || o.Pagination == nil {
+		var ret Pagination
+		return ret
+	}
+	return *o.Pagination
+}
+
+// GetPaginationOk returns a tuple with the Pagination field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetPaginationOk() (*Pagination, bool) {
+	if o == nil || o.Pagination == nil {
+		return nil, false
+	}
+	return o.Pagination, true
+}
+
+// HasPagination returns a boolean if a field has been set.
+func (o *GetServices) HasPagination() bool {
+	if o != nil && o.Pagination != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetPagination gets a reference to the given Pagination and assigns it to the Pagination field.
+func (o *GetServices) SetPagination(v Pagination) {
+	o.Pagination = &v
+}
+
+// GetOrder returns the Order field value if set, zero value otherwise.
+func (o *GetServices) GetOrder() Order {
+	if o == nil || o.Order == nil {
+		var ret Order
+		return ret
+	}
+	return *o.Order
+}
+
+// GetOrderOk returns a tuple with the Order field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetOrderOk() (*Order, bool) {
+	if o == nil || o.Order == nil {
+		return nil, false
+	}
+	return o.Order, true
+}
+
+// HasOrder returns a boolean if a field has been set.
+func (o *GetServices) HasOrder() bool {
+	if o != nil && o.Order != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetOrder gets a reference to the given Order and assigns it to the Order field.
+func (o *GetServices) SetOrder(v Order) {
+	o.Order = &v
+}
+
+// GetTimeFrame returns the TimeFrame field value if set, zero value otherwise.
+func (o *GetServices) GetTimeFrame() TimeFrame {
+	if o == nil || o.TimeFrame == nil {
+		var ret TimeFrame
+		return ret
+	}
+	return *o.TimeFrame
+}
+
+// GetTimeFrameOk returns a tuple with the TimeFrame field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetTimeFrameOk() (*TimeFrame, bool) {
+	if o == nil || o.TimeFrame == nil {
+		return nil, false
+	}
+	return o.TimeFrame, true
+}
+
+// HasTimeFrame returns a boolean if a field has been set.
+func (o *GetServices) HasTimeFrame() bool {
+	if o != nil && o.TimeFrame != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetTimeFrame gets a reference to the given TimeFrame and assigns it to the TimeFrame field.
+func (o *GetServices) SetTimeFrame(v TimeFrame) {
+	o.TimeFrame = &v
+}
+
+// GetMetrics returns the Metrics field value
+func (o *GetServices) GetMetrics() []AppDataMetricConfiguration {
+	if o == nil {
+		var ret []AppDataMetricConfiguration
+		return ret
+	}
+
+	return o.Metrics
+}
+
+// GetMetricsOk returns a tuple with the Metrics field value
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetMetricsOk() (*[]AppDataMetricConfiguration, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Metrics, true
+}
+
+// SetMetrics sets field value
+func (o *GetServices) SetMetrics(v []AppDataMetricConfiguration) {
+	o.Metrics = v
+}
+
+// GetNameFilter returns the NameFilter field value if set, zero value otherwise.
+func (o *GetServices) GetNameFilter() string {
+	if o == nil || o.NameFilter == nil {
+		var ret string
+		return ret
+	}
+	return *o.NameFilter
+}
+
+// GetNameFilterOk returns a tuple with the NameFilter field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetNameFilterOk() (*string, bool) {
+	if o == nil || o.NameFilter == nil {
+		return nil, false
+	}
+	return o.NameFilter, true
+}
+
+// HasNameFilter returns a boolean if a field has been set.
+func (o *GetServices) HasNameFilter() bool {
+	if o != nil && o.NameFilter != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetNameFilter gets a reference to the given string and assigns it to the NameFilter field.
+func (o *GetServices) SetNameFilter(v string) {
+	o.NameFilter = &v
+}
+
+// GetApplicationId returns the ApplicationId field value if set, zero value otherwise.
+func (o *GetServices) GetApplicationId() string {
+	if o == nil || o.ApplicationId == nil {
+		var ret string
+		return ret
+	}
+	return *o.ApplicationId
+}
+
+// GetApplicationIdOk returns a tuple with the ApplicationId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetApplicationIdOk() (*string, bool) {
+	if o == nil || o.ApplicationId == nil {
+		return nil, false
+	}
+	return o.ApplicationId, true
+}
+
+// HasApplicationId returns a boolean if a field has been set.
+func (o *GetServices) HasApplicationId() bool {
+	if o != nil && o.ApplicationId != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetApplicationId gets a reference to the given string and assigns it to the ApplicationId field.
+func (o *GetServices) SetApplicationId(v string) {
+	o.ApplicationId = &v
+}
+
+// GetServiceId returns the ServiceId field value if set, zero value otherwise.
+func (o *GetServices) GetServiceId() string {
+	if o == nil || o.ServiceId == nil {
+		var ret string
+		return ret
+	}
+	return *o.ServiceId
+}
+
+// GetServiceIdOk returns a tuple with the ServiceId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetServiceIdOk() (*string, bool) {
+	if o == nil || o.ServiceId == nil {
+		return nil, false
+	}
+	return o.ServiceId, true
+}
+
+// HasServiceId returns a boolean if a field has been set.
+func (o *GetServices) HasServiceId() bool {
+	if o != nil && o.ServiceId != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetServiceId gets a reference to the given string and assigns it to the ServiceId field.
+func (o *GetServices) SetServiceId(v string) {
+	o.ServiceId = &v
+}
+
+// GetTechnologies returns the Technologies field value if set, zero value otherwise.
+func (o *GetServices) GetTechnologies() []string {
+	if o == nil || o.Technologies == nil {
+		var ret []string
+		return ret
+	}
+	return *o.Technologies
+}
+
+// GetTechnologiesOk returns a tuple with the Technologies field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetTechnologiesOk() (*[]string, bool) {
+	if o == nil || o.Technologies == nil {
+		return nil, false
+	}
+	return o.Technologies, true
+}
+
+// HasTechnologies returns a boolean if a field has been set.
+func (o *GetServices) HasTechnologies() bool {
+	if o != nil && o.Technologies != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetTechnologies gets a reference to the given []string and assigns it to the Technologies field.
+func (o *GetServices) SetTechnologies(v []string) {
+	o.Technologies = &v
+}
+
+// GetContextScope returns the ContextScope field value if set, zero value otherwise.
+func (o *GetServices) GetContextScope() string {
+	if o == nil || o.ContextScope == nil {
+		var ret string
+		return ret
+	}
+	return *o.ContextScope
+}
+
+// GetContextScopeOk returns a tuple with the ContextScope field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetContextScopeOk() (*string, bool) {
+	if o == nil || o.ContextScope == nil {
+		return nil, false
+	}
+	return o.ContextScope, true
+}
+
+// HasContextScope returns a boolean if a field has been set.
+func (o *GetServices) HasContextScope() bool {
+	if o != nil && o.ContextScope != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetContextScope gets a reference to the given string and assigns it to the ContextScope field.
+func (o *GetServices) SetContextScope(v string) {
+	o.ContextScope = &v
+}
+
+// GetApplicationBoundaryScope returns the ApplicationBoundaryScope field value if set, zero value otherwise.
+func (o *GetServices) GetApplicationBoundaryScope() string {
+	if o == nil || o.ApplicationBoundaryScope == nil {
+		var ret string
+		return ret
+	}
+	return *o.ApplicationBoundaryScope
+}
+
+// GetApplicationBoundaryScopeOk returns a tuple with the ApplicationBoundaryScope field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetServices) GetApplicationBoundaryScopeOk() (*string, bool) {
+	if o == nil || o.ApplicationBoundaryScope == nil {
+		return nil, false
+	}
+	return o.ApplicationBoundaryScope, true
+}
+
+// HasApplicationBoundaryScope returns a boolean if a field has been set.
+func (o *GetServices) HasApplicationBoundaryScope() bool {
+	if o != nil && o.ApplicationBoundaryScope != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetApplicationBoundaryScope gets a reference to the given string and assigns it to the ApplicationBoundaryScope field.
+func (o *GetServices) SetApplicationBoundaryScope(v string) {
+	o.ApplicationBoundaryScope = &v
+}
+
+func (o GetServices) MarshalJSON() ([]byte, error) {
+	toSerialize := map[string]interface{}{}
+	if o.Pagination != nil {
+		toSerialize["pagination"] = o.Pagination
+	}
+	if o.Order != nil {
+		toSerialize["order"] = o.Order
+	}
+	if o.TimeFrame != nil {
+		toSerialize["timeFrame"] = o.TimeFrame
+	}
+	if true {
+		toSerialize["metrics"] = o.Metrics
+	}
+	if o.NameFilter != nil {
+		toSerialize["nameFilter"] = o.NameFilter
+	}
+	if o.ApplicationId != nil {
+		toSerialize["applicationId"] = o.ApplicationId
+	}
+	if o.ServiceId != nil {
+		toSerialize["serviceId"] = o.ServiceId
+	}
+	if o.Technologies != nil {
+		toSerialize["technologies"] = o.Technologies
+	}
+	if o.ContextScope != nil {
+		toSerialize["contextScope"] = o.ContextScope
+	}
+	if o.ApplicationBoundaryScope != nil {
+		toSerialize["applicationBoundaryScope"] = o.ApplicationBoundaryScope
+	}
+	return json.Marshal(toSerialize)
+}
+
+type NullableGetServices struct {
+	value *GetServices
+	isSet bool
+}
+
+func (v NullableGetServices) Get() *GetServices {
+	return v.value
+}
+
+func (v *NullableGetServices) Set(val *GetServices) {
+	v.value = val
+	v.isSet = true
+}
+
+func (v NullableGetServices) IsSet() bool {
+	return v.isSet
+}
+
+func (v *NullableGetServices) Unset() {
+	v.value = nil
+	v.isSet = false
+}
+
+func NewNullableGetServices(val *GetServices) *NullableGetServices {
+	return &NullableGetServices{value: val, isSet: true}
+}
+
+func (v NullableGetServices) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.value)
+}
+
+func (v *NullableGetServices) UnmarshalJSON(src []byte) error {
+	v.isSet = true
+	return json.Unmarshal(src, &v.value)
 }

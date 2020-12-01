@@ -1,25 +1,410 @@
 /*
  * Introduction to Instana public APIs
  *
- * ## Agent REST API ### Event SDK REST Web Service Using the Event SDK REST Web Service, it is possible to integrate custom health checks and other event sources into Instana. Each one running the Instana Agent can be used to feed in manual events. The agent has an endpoint which listens on `http://localhost:42699/com.instana.plugin.generic.event` and accepts the following JSON via a POST request:  ```json {     \"title\": <string>,     \"text\": <string>,     \"severity\": <integer> , -1, 5 or 10     \"timestamp\": <integer>, timestamp in milliseconds from epoch     \"duration\": <integer>, duration in milliseconds } ```  *Title* and *text* are used for display purposes.  *Severity* is an optional integer of -1, 5 and 10. A value of -1 or EMPTY will generate a Change. A value of 5 will generate a *warning Issue*, and a value of 10 will generate a *critical Issue*.  When absent, the event is treated as a change without severity. *Timestamp* is the timestamp of the event, but it is optional, in which case the current time is used. *Duration* can be used to mark a timespan for the event. It also is optional, in which case the event will be marked as \"instant\" rather than \"from-to.\"  The endpoint also accepts a batch of events, which then need to be given as an array:  ```json [     {     // event as above     },     {     // event as above     } ] ```  #### Ruby Example  ```ruby duration = (Time.now.to_f * 1000).floor - deploy_start_time_in_ms payload = {} payload[:title] = 'Deployed MyApp' payload[:text] = 'pglombardo deployed MyApp@revision' payload[:duration] = duration  uri = URI('http://localhost:42699/com.instana.plugin.generic.event') req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json') req.body = payload.to_json Net::HTTP.start(uri.hostname, uri.port) do |http|     http.request(req) end ```  #### Curl Example  ```bash curl -XPOST http://localhost:42699/com.instana.plugin.generic.event -H \"Content-Type: application/json\" -d '{\"title\":\"Custom API Events \", \"text\": \"Failure Redeploying Service Duration\", \"duration\": 5000, \"severity\": -1}' ```  #### PowerShell Example  For Powershell you can either use the standard Cmdlets `Invoke-WebRequest` or `Invoke-RestMethod`. The parameters to be provided are basically the same.  ```bash Invoke-RestMethod     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method POST     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ```  ```bash Invoke-WebRequest     -Uri http://localhost:42699/com.instana.plugin.generic.event     -Method Post     -Body '{\"title\":\"PowerShell Event \", \"text\": \"You used PowerShell to create this event!\", \"duration\": 5000, \"severity\": -1}' ``` ## Backend REST API The Instana API allows retrieval and configuration of key data points. Among others, this API enables automatic reaction and further analysis of identified incidents as well as reporting capabilities.  The API documentation referes to two crucial parameters that you need to know about before reading further: base: This is the base URL of a tenant unit, e.g. `https://test-example.instana.io`. This is the same URL that is used to access the Instana user interface. apiToken: Requests against the Instana API require valid API tokens. An initial API token can be generated via the Instana user interface. Any additional API tokens can be generated via the API itself.  ### Example Here is an Example to use the REST API with Curl. First lets get all the available metrics with possible aggregations with a GET call.  ```bash curl --request GET \\   --url https://test-instana.instana.io/api/application-monitoring/catalog/metrics \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' ```  Next we can get every call grouped by the endpoint name that has an error count greater then zero. As a metric we could get the mean error rate for example.  ```bash curl --request POST \\   --url https://test-instana.instana.io/api/application-monitoring/analyze/call-groups \\   --header 'authorization: apiToken xxxxxxxxxxxxxxxx' \\   --header 'content-type: application/json' \\   --data '{   \"group\":{       \"groupbyTag\":\"endpoint.name\"   },   \"tagFilters\":[    {     \"name\":\"call.error.count\",     \"value\":\"0\",     \"operator\":\"GREATER_THAN\"    }   ],   \"metrics\":[    {     \"metric\":\"errors\",     \"aggregation\":\"MEAN\"    }   ]   }' ```   ### Rate Limiting A rate limit is applied to API usage. Up to 5,000 calls per hour can be made. How many remaining calls can be made and when this call limit resets, can inspected via three headers that are part of the responses of the API server.  **X-RateLimit-Limit:** Shows the maximum number of calls that may be executed per hour.  **X-RateLimit-Remaining:** How many calls may still be executed within the current hour.  **X-RateLimit-Reset:** Time when the remaining calls will be reset to the limit. For compatibility reasons with other rate limited APIs, this date is not the date in milliseconds, but instead in seconds since 1970-01-01T00:00:00+00:00.  ## Generating REST API clients  The API is specified using the [OpenAPI v3](https://github.com/OAI/OpenAPI-Specification) (previously known as Swagger) format. You can download the current specification at our [GitHub API documentation](https://instana.github.io/openapi/openapi.yaml).  OpenAPI tries to solve the issue of ever-evolving APIs and clients lagging behind. Please make sure that you always use the latest version of the generator, as a number of improvements are regularly made. To generate a client library for your language, you can use the [OpenAPI client generators](https://github.com/OpenAPITools/openapi-generator).  ### Go For example, to generate a client library for Go to interact with our backend, you can use the following script; mind replacing the values of the `UNIT_NAME` and `TENANT_NAME` environment variables using those for your tenant unit:  ```bash #!/bin/bash  ### This script assumes you have the `java` and `wget` commands on the path  export UNIT_NAME='myunit' # for example: prod export TENANT_NAME='mytenant' # for example: awesomecompany  //Download the generator to your current working directory: wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar --server-variables \"tenant=${TENANT_NAME},unit=${UNIT_NAME}\"  //generate a client library that you can vendor into your repository java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g go \\     -o pkg/instana/openapi \\     --skip-validate-spec  //(optional) format the Go code according to the Go code standard gofmt -s -w pkg/instana/openapi ```  The generated clients contain comprehensive READMEs, and you can start right away using the client from the example above:  ```go import instana \"./pkg/instana/openapi\"  // readTags will read all available application monitoring tags along with their type and category func readTags() {  configuration := instana.NewConfiguration()  configuration.Host = \"tenant-unit.instana.io\"  configuration.BasePath = \"https://tenant-unit.instana.io\"   client := instana.NewAPIClient(configuration)  auth := context.WithValue(context.Background(), instana.ContextAPIKey, instana.APIKey{   Key:    apiKey,   Prefix: \"apiToken\",  })   tags, _, err := client.ApplicationCatalogApi.GetTagsForApplication(auth)  if err != nil {   fmt.Fatalf(\"Error calling the API, aborting.\")  }   for _, tag := range tags {   fmt.Printf(\"%s (%s): %s\\n\", tag.Category, tag.Type, tag.Name)  } } ```  ### Java Download the latest openapi generator cli: ``` wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar ```  A list for calls for different java http client implementations, which creates a valid generated source code for our spec. ``` //Nativ Java HTTP Client java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8 --library native  //Spring WebClient java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library webclient  //Spring RestTemplate java -jar openapi-generator-cli.jar generate -i https://instana.github.io/openapi/openapi.yaml -g java -o pkg/instana/openapi --skip-validate-spec  -p dateLibrary=java8,hideGenerationTimestamp=true --library resttemplate  ```
+ * No description provided (generated by Openapi Generator https://github.com/openapitools/openapi-generator)
  *
- * API version: 1.190.696
+ * API version: 1.192.86
  * Contact: support@instana.com
- * Generated by: OpenAPI Generator (https://openapi-generator.tech)
  */
 
+// Code generated by OpenAPI Generator (https://openapi-generator.tech); DO NOT EDIT.
+
 package instana
+
+import (
+	"encoding/json"
+)
 
 // CustomEventSpecificationWithLastUpdated struct for CustomEventSpecificationWithLastUpdated
 type CustomEventSpecificationWithLastUpdated struct {
 	Id             string         `json:"id"`
 	Name           string         `json:"name"`
 	EntityType     string         `json:"entityType"`
-	Query          string         `json:"query,omitempty"`
-	Triggering     bool           `json:"triggering,omitempty"`
-	Description    string         `json:"description,omitempty"`
-	ExpirationTime int64          `json:"expirationTime,omitempty"`
-	Enabled        bool           `json:"enabled,omitempty"`
+	Query          *string        `json:"query,omitempty"`
+	Triggering     *bool          `json:"triggering,omitempty"`
+	Description    *string        `json:"description,omitempty"`
+	ExpirationTime *int64         `json:"expirationTime,omitempty"`
+	Enabled        *bool          `json:"enabled,omitempty"`
 	Rules          []AbstractRule `json:"rules"`
-	LastUpdated    int64          `json:"lastUpdated,omitempty"`
+	LastUpdated    *int64         `json:"lastUpdated,omitempty"`
+}
+
+// NewCustomEventSpecificationWithLastUpdated instantiates a new CustomEventSpecificationWithLastUpdated object
+// This constructor will assign default values to properties that have it defined,
+// and makes sure properties required by API are set, but the set of arguments
+// will change when the set of required properties is changed
+func NewCustomEventSpecificationWithLastUpdated(id string, name string, entityType string, rules []AbstractRule) *CustomEventSpecificationWithLastUpdated {
+	this := CustomEventSpecificationWithLastUpdated{}
+	this.Id = id
+	this.Name = name
+	this.EntityType = entityType
+	this.Rules = rules
+	return &this
+}
+
+// NewCustomEventSpecificationWithLastUpdatedWithDefaults instantiates a new CustomEventSpecificationWithLastUpdated object
+// This constructor will only assign default values to properties that have it defined,
+// but it doesn't guarantee that properties required by API are set
+func NewCustomEventSpecificationWithLastUpdatedWithDefaults() *CustomEventSpecificationWithLastUpdated {
+	this := CustomEventSpecificationWithLastUpdated{}
+	return &this
+}
+
+// GetId returns the Id field value
+func (o *CustomEventSpecificationWithLastUpdated) GetId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Id
+}
+
+// GetIdOk returns a tuple with the Id field value
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Id, true
+}
+
+// SetId sets field value
+func (o *CustomEventSpecificationWithLastUpdated) SetId(v string) {
+	o.Id = v
+}
+
+// GetName returns the Name field value
+func (o *CustomEventSpecificationWithLastUpdated) GetName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Name
+}
+
+// GetNameOk returns a tuple with the Name field value
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Name, true
+}
+
+// SetName sets field value
+func (o *CustomEventSpecificationWithLastUpdated) SetName(v string) {
+	o.Name = v
+}
+
+// GetEntityType returns the EntityType field value
+func (o *CustomEventSpecificationWithLastUpdated) GetEntityType() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.EntityType
+}
+
+// GetEntityTypeOk returns a tuple with the EntityType field value
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetEntityTypeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.EntityType, true
+}
+
+// SetEntityType sets field value
+func (o *CustomEventSpecificationWithLastUpdated) SetEntityType(v string) {
+	o.EntityType = v
+}
+
+// GetQuery returns the Query field value if set, zero value otherwise.
+func (o *CustomEventSpecificationWithLastUpdated) GetQuery() string {
+	if o == nil || o.Query == nil {
+		var ret string
+		return ret
+	}
+	return *o.Query
+}
+
+// GetQueryOk returns a tuple with the Query field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetQueryOk() (*string, bool) {
+	if o == nil || o.Query == nil {
+		return nil, false
+	}
+	return o.Query, true
+}
+
+// HasQuery returns a boolean if a field has been set.
+func (o *CustomEventSpecificationWithLastUpdated) HasQuery() bool {
+	if o != nil && o.Query != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetQuery gets a reference to the given string and assigns it to the Query field.
+func (o *CustomEventSpecificationWithLastUpdated) SetQuery(v string) {
+	o.Query = &v
+}
+
+// GetTriggering returns the Triggering field value if set, zero value otherwise.
+func (o *CustomEventSpecificationWithLastUpdated) GetTriggering() bool {
+	if o == nil || o.Triggering == nil {
+		var ret bool
+		return ret
+	}
+	return *o.Triggering
+}
+
+// GetTriggeringOk returns a tuple with the Triggering field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetTriggeringOk() (*bool, bool) {
+	if o == nil || o.Triggering == nil {
+		return nil, false
+	}
+	return o.Triggering, true
+}
+
+// HasTriggering returns a boolean if a field has been set.
+func (o *CustomEventSpecificationWithLastUpdated) HasTriggering() bool {
+	if o != nil && o.Triggering != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetTriggering gets a reference to the given bool and assigns it to the Triggering field.
+func (o *CustomEventSpecificationWithLastUpdated) SetTriggering(v bool) {
+	o.Triggering = &v
+}
+
+// GetDescription returns the Description field value if set, zero value otherwise.
+func (o *CustomEventSpecificationWithLastUpdated) GetDescription() string {
+	if o == nil || o.Description == nil {
+		var ret string
+		return ret
+	}
+	return *o.Description
+}
+
+// GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetDescriptionOk() (*string, bool) {
+	if o == nil || o.Description == nil {
+		return nil, false
+	}
+	return o.Description, true
+}
+
+// HasDescription returns a boolean if a field has been set.
+func (o *CustomEventSpecificationWithLastUpdated) HasDescription() bool {
+	if o != nil && o.Description != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetDescription gets a reference to the given string and assigns it to the Description field.
+func (o *CustomEventSpecificationWithLastUpdated) SetDescription(v string) {
+	o.Description = &v
+}
+
+// GetExpirationTime returns the ExpirationTime field value if set, zero value otherwise.
+func (o *CustomEventSpecificationWithLastUpdated) GetExpirationTime() int64 {
+	if o == nil || o.ExpirationTime == nil {
+		var ret int64
+		return ret
+	}
+	return *o.ExpirationTime
+}
+
+// GetExpirationTimeOk returns a tuple with the ExpirationTime field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetExpirationTimeOk() (*int64, bool) {
+	if o == nil || o.ExpirationTime == nil {
+		return nil, false
+	}
+	return o.ExpirationTime, true
+}
+
+// HasExpirationTime returns a boolean if a field has been set.
+func (o *CustomEventSpecificationWithLastUpdated) HasExpirationTime() bool {
+	if o != nil && o.ExpirationTime != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetExpirationTime gets a reference to the given int64 and assigns it to the ExpirationTime field.
+func (o *CustomEventSpecificationWithLastUpdated) SetExpirationTime(v int64) {
+	o.ExpirationTime = &v
+}
+
+// GetEnabled returns the Enabled field value if set, zero value otherwise.
+func (o *CustomEventSpecificationWithLastUpdated) GetEnabled() bool {
+	if o == nil || o.Enabled == nil {
+		var ret bool
+		return ret
+	}
+	return *o.Enabled
+}
+
+// GetEnabledOk returns a tuple with the Enabled field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetEnabledOk() (*bool, bool) {
+	if o == nil || o.Enabled == nil {
+		return nil, false
+	}
+	return o.Enabled, true
+}
+
+// HasEnabled returns a boolean if a field has been set.
+func (o *CustomEventSpecificationWithLastUpdated) HasEnabled() bool {
+	if o != nil && o.Enabled != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetEnabled gets a reference to the given bool and assigns it to the Enabled field.
+func (o *CustomEventSpecificationWithLastUpdated) SetEnabled(v bool) {
+	o.Enabled = &v
+}
+
+// GetRules returns the Rules field value
+func (o *CustomEventSpecificationWithLastUpdated) GetRules() []AbstractRule {
+	if o == nil {
+		var ret []AbstractRule
+		return ret
+	}
+
+	return o.Rules
+}
+
+// GetRulesOk returns a tuple with the Rules field value
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetRulesOk() (*[]AbstractRule, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Rules, true
+}
+
+// SetRules sets field value
+func (o *CustomEventSpecificationWithLastUpdated) SetRules(v []AbstractRule) {
+	o.Rules = v
+}
+
+// GetLastUpdated returns the LastUpdated field value if set, zero value otherwise.
+func (o *CustomEventSpecificationWithLastUpdated) GetLastUpdated() int64 {
+	if o == nil || o.LastUpdated == nil {
+		var ret int64
+		return ret
+	}
+	return *o.LastUpdated
+}
+
+// GetLastUpdatedOk returns a tuple with the LastUpdated field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CustomEventSpecificationWithLastUpdated) GetLastUpdatedOk() (*int64, bool) {
+	if o == nil || o.LastUpdated == nil {
+		return nil, false
+	}
+	return o.LastUpdated, true
+}
+
+// HasLastUpdated returns a boolean if a field has been set.
+func (o *CustomEventSpecificationWithLastUpdated) HasLastUpdated() bool {
+	if o != nil && o.LastUpdated != nil {
+		return true
+	}
+
+	return false
+}
+
+// SetLastUpdated gets a reference to the given int64 and assigns it to the LastUpdated field.
+func (o *CustomEventSpecificationWithLastUpdated) SetLastUpdated(v int64) {
+	o.LastUpdated = &v
+}
+
+func (o CustomEventSpecificationWithLastUpdated) MarshalJSON() ([]byte, error) {
+	toSerialize := map[string]interface{}{}
+	if true {
+		toSerialize["id"] = o.Id
+	}
+	if true {
+		toSerialize["name"] = o.Name
+	}
+	if true {
+		toSerialize["entityType"] = o.EntityType
+	}
+	if o.Query != nil {
+		toSerialize["query"] = o.Query
+	}
+	if o.Triggering != nil {
+		toSerialize["triggering"] = o.Triggering
+	}
+	if o.Description != nil {
+		toSerialize["description"] = o.Description
+	}
+	if o.ExpirationTime != nil {
+		toSerialize["expirationTime"] = o.ExpirationTime
+	}
+	if o.Enabled != nil {
+		toSerialize["enabled"] = o.Enabled
+	}
+	if true {
+		toSerialize["rules"] = o.Rules
+	}
+	if o.LastUpdated != nil {
+		toSerialize["lastUpdated"] = o.LastUpdated
+	}
+	return json.Marshal(toSerialize)
+}
+
+type NullableCustomEventSpecificationWithLastUpdated struct {
+	value *CustomEventSpecificationWithLastUpdated
+	isSet bool
+}
+
+func (v NullableCustomEventSpecificationWithLastUpdated) Get() *CustomEventSpecificationWithLastUpdated {
+	return v.value
+}
+
+func (v *NullableCustomEventSpecificationWithLastUpdated) Set(val *CustomEventSpecificationWithLastUpdated) {
+	v.value = val
+	v.isSet = true
+}
+
+func (v NullableCustomEventSpecificationWithLastUpdated) IsSet() bool {
+	return v.isSet
+}
+
+func (v *NullableCustomEventSpecificationWithLastUpdated) Unset() {
+	v.value = nil
+	v.isSet = false
+}
+
+func NewNullableCustomEventSpecificationWithLastUpdated(val *CustomEventSpecificationWithLastUpdated) *NullableCustomEventSpecificationWithLastUpdated {
+	return &NullableCustomEventSpecificationWithLastUpdated{value: val, isSet: true}
+}
+
+func (v NullableCustomEventSpecificationWithLastUpdated) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.value)
+}
+
+func (v *NullableCustomEventSpecificationWithLastUpdated) UnmarshalJSON(src []byte) error {
+	v.isSet = true
+	return json.Unmarshal(src, &v.value)
 }

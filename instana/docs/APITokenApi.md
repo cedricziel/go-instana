@@ -4,27 +4,61 @@ All URIs are relative to *https://unit-tenant.instana.io*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**DeleteApiToken**](APITokenApi.md#DeleteApiToken) | **Delete** /api/settings/api-tokens/{apiTokenId} | Delete API token
-[**GetApiToken**](APITokenApi.md#GetApiToken) | **Get** /api/settings/api-tokens/{apiTokenId} | API token
+[**DeleteApiToken**](APITokenApi.md#DeleteApiToken) | **Delete** /api/settings/api-tokens/{internalId} | Delete API token
+[**GetApiToken**](APITokenApi.md#GetApiToken) | **Get** /api/settings/api-tokens/{internalId} | API token
 [**GetApiTokens**](APITokenApi.md#GetApiTokens) | **Get** /api/settings/api-tokens | All API tokens
 [**PostApiToken**](APITokenApi.md#PostApiToken) | **Post** /api/settings/api-tokens | Create an API token
-[**PutApiToken**](APITokenApi.md#PutApiToken) | **Put** /api/settings/api-tokens/{apiTokenId} | Create or update an API token
+[**PutApiToken**](APITokenApi.md#PutApiToken) | **Put** /api/settings/api-tokens/{internalId} | Create or update an API token
 
 
 
 ## DeleteApiToken
 
-> DeleteApiToken(ctx, apiTokenId)
+> DeleteApiToken(ctx, internalId).Execute()
 
 Delete API token
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    internalId := "internalId_example" // string | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.APITokenApi.DeleteApiToken(context.Background(), internalId).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `APITokenApi.DeleteApiToken``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**apiTokenId** | **string**|  | 
+**internalId** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiDeleteApiTokenRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
 
 ### Return type
 
@@ -46,17 +80,53 @@ Name | Type | Description  | Notes
 
 ## GetApiToken
 
-> ApiToken GetApiToken(ctx, apiTokenId)
+> ApiToken GetApiToken(ctx, internalId).Execute()
 
 API token
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    internalId := "internalId_example" // string | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.APITokenApi.GetApiToken(context.Background(), internalId).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `APITokenApi.GetApiToken``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetApiToken`: ApiToken
+    fmt.Fprintf(os.Stdout, "Response from `APITokenApi.GetApiToken`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**apiTokenId** | **string**|  | 
+**internalId** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetApiTokenRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
 
 ### Return type
 
@@ -78,13 +148,44 @@ Name | Type | Description  | Notes
 
 ## GetApiTokens
 
-> []ApiToken GetApiTokens(ctx, )
+> []ApiToken GetApiTokens(ctx).Execute()
 
 All API tokens
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.APITokenApi.GetApiTokens(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `APITokenApi.GetApiTokens``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetApiTokens`: []ApiToken
+    fmt.Fprintf(os.Stdout, "Response from `APITokenApi.GetApiTokens`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetApiTokensRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -106,17 +207,49 @@ This endpoint does not need any parameter.
 
 ## PostApiToken
 
-> ApiToken PostApiToken(ctx, apiToken)
+> ApiToken PostApiToken(ctx).ApiToken(apiToken).Execute()
 
 Create an API token
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    apiToken := *openapiclient.NewApiToken("AccessGrantingToken_example", "InternalId_example", "Name_example") // ApiToken | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.APITokenApi.PostApiToken(context.Background()).ApiToken(apiToken).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `APITokenApi.PostApiToken``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `PostApiToken`: ApiToken
+    fmt.Fprintf(os.Stdout, "Response from `APITokenApi.PostApiToken`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiPostApiTokenRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**apiToken** | [**ApiToken**](ApiToken.md)|  | 
+ **apiToken** | [**ApiToken**](ApiToken.md) |  | 
 
 ### Return type
 
@@ -138,18 +271,55 @@ Name | Type | Description  | Notes
 
 ## PutApiToken
 
-> ApiToken PutApiToken(ctx, apiTokenId, apiToken)
+> ApiToken PutApiToken(ctx, internalId).ApiToken(apiToken).Execute()
 
 Create or update an API token
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    internalId := "internalId_example" // string | 
+    apiToken := *openapiclient.NewApiToken("AccessGrantingToken_example", "InternalId_example", "Name_example") // ApiToken | 
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.APITokenApi.PutApiToken(context.Background(), internalId).ApiToken(apiToken).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `APITokenApi.PutApiToken``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `PutApiToken`: ApiToken
+    fmt.Fprintf(os.Stdout, "Response from `APITokenApi.PutApiToken`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**apiTokenId** | **string**|  | 
-**apiToken** | [**ApiToken**](ApiToken.md)|  | 
+**internalId** | **string** |  | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiPutApiTokenRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **apiToken** | [**ApiToken**](ApiToken.md) |  | 
 
 ### Return type
 

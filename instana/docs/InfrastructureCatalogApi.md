@@ -13,30 +13,55 @@ Method | HTTP request | Description
 
 ## GetInfrastructureCatalogMetrics
 
-> []MetricInstance GetInfrastructureCatalogMetrics(ctx, plugin, optional)
+> []MetricInstance GetInfrastructureCatalogMetrics(ctx, plugin).Filter(filter).Execute()
 
 Get metric catalog
 
-This endpoint retrieves all available metric definitions of the requested plugin.  ### Path Parameters:  **plugin** The plugin id from [available plugins](#operation/getInfrastructureCatalogPlugins)  ### Optional Parameters:  **filter** You can restrict the returned metric definitions by passing a filter.  * `custom` to retrieve custom metric definitions only. * `builtin` to retrieve built-in metric definitions only. 
+### Example
 
-### Required Parameters
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    plugin := "plugin_example" // string | 
+    filter := "filter_example" // string |  (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureCatalogApi.GetInfrastructureCatalogMetrics(context.Background(), plugin).Filter(filter).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureCatalogApi.GetInfrastructureCatalogMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetInfrastructureCatalogMetrics`: []MetricInstance
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureCatalogApi.GetInfrastructureCatalogMetrics`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**plugin** | **string**|  | 
- **optional** | ***GetInfrastructureCatalogMetricsOpts** | optional parameters | nil if no parameters
+**plugin** | **string** |  | 
 
-### Optional Parameters
+### Other Parameters
 
-Optional parameters are passed through a pointer to a GetInfrastructureCatalogMetricsOpts struct
+Other parameters are passed through a pointer to a apiGetInfrastructureCatalogMetricsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
- **filter** | **optional.String**|  | 
+ **filter** | **string** |  | 
 
 ### Return type
 
@@ -58,15 +83,44 @@ Name | Type | Description  | Notes
 
 ## GetInfrastructureCatalogPlugins
 
-> []PluginResult GetInfrastructureCatalogPlugins(ctx, )
+> []PluginResult GetInfrastructureCatalogPlugins(ctx).Execute()
 
 Get plugin catalog
 
-This endpoint retrieves all available plugin ids for your monitored system. 
+### Example
 
-### Required Parameters
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureCatalogApi.GetInfrastructureCatalogPlugins(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureCatalogApi.GetInfrastructureCatalogPlugins``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetInfrastructureCatalogPlugins`: []PluginResult
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureCatalogApi.GetInfrastructureCatalogPlugins`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetInfrastructureCatalogPluginsRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -88,13 +142,44 @@ This endpoint does not need any parameter.
 
 ## GetInfrastructureCatalogPluginsWithCustomMetrics
 
-> []PluginResult GetInfrastructureCatalogPluginsWithCustomMetrics(ctx, )
+> []PluginResult GetInfrastructureCatalogPluginsWithCustomMetrics(ctx).Execute()
 
 Get all plugins with custom metrics catalog
 
-### Required Parameters
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureCatalogApi.GetInfrastructureCatalogPluginsWithCustomMetrics(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureCatalogApi.GetInfrastructureCatalogPluginsWithCustomMetrics``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetInfrastructureCatalogPluginsWithCustomMetrics`: []PluginResult
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureCatalogApi.GetInfrastructureCatalogPluginsWithCustomMetrics`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetInfrastructureCatalogPluginsWithCustomMetricsRequest struct via the builder pattern
+
 
 ### Return type
 
@@ -116,15 +201,44 @@ This endpoint does not need any parameter.
 
 ## GetInfrastructureCatalogSearchFields
 
-> []SearchFieldResult GetInfrastructureCatalogSearchFields(ctx, )
+> []SearchFieldResult GetInfrastructureCatalogSearchFields(ctx).Execute()
 
 get search field catalog
 
-This endpoint retrieves all available search keywords for dynamic focus queries.  These search fields can be accessed via lucene queries. Each field belongs to a context, e.g. to entity, trace or event data. Some fields contain a set of possible fixed values, in this case a deviant value is invalid.  ``` ?query={keyword}:{value} ``` 
+### Example
 
-### Required Parameters
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    api_client := openapiclient.NewAPIClient(configuration)
+    resp, r, err := api_client.InfrastructureCatalogApi.GetInfrastructureCatalogSearchFields(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `InfrastructureCatalogApi.GetInfrastructureCatalogSearchFields``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetInfrastructureCatalogSearchFields`: []SearchFieldResult
+    fmt.Fprintf(os.Stdout, "Response from `InfrastructureCatalogApi.GetInfrastructureCatalogSearchFields`: %v\n", resp)
+}
+```
+
+### Path Parameters
 
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetInfrastructureCatalogSearchFieldsRequest struct via the builder pattern
+
 
 ### Return type
 
