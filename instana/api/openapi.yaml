@@ -12083,7 +12083,6 @@ components:
           type: string
         tagName:
           type: string
-      type: object
     BinaryOperatorDTO_allOf:
       properties:
         left:
@@ -12095,7 +12094,6 @@ components:
           - AND
           - OR
           type: string
-      type: object
     TagMatcherDTO_allOf:
       properties:
         key:
@@ -12127,29 +12125,24 @@ components:
           - LESS_THAN
           - GREATER_THAN
           type: string
-      type: object
     FixedHttpPathSegmentMatchingRule_allOf:
       properties:
         name:
           type: string
-      type: object
     UnsupportedHttpPathSegmentMatchingRule_allOf:
       properties:
         unsupportedType:
           type: string
-      type: object
     EmailIntegration_allOf:
       properties:
         emails:
           items:
             type: string
           type: array
-      type: object
     GoogleChatIntegration_allOf:
       properties:
         webhookUrl:
           type: string
-      type: object
     OpsgenieIntegration_allOf:
       properties:
         apiKey:
@@ -12163,19 +12156,16 @@ components:
           type: string
         alias:
           type: string
-      type: object
     PagerdutyIntegration_allOf:
       properties:
         serviceIntegrationKey:
           type: string
-      type: object
     PrometheusWebhookIntegration_allOf:
       properties:
         webhookUrl:
           type: string
         receiver:
           type: string
-      type: object
     SlackIntegration_allOf:
       properties:
         webhookUrl:
@@ -12184,21 +12174,18 @@ components:
           type: string
         channel:
           type: string
-      type: object
     SplunkIntegration_allOf:
       properties:
         url:
           type: string
         token:
           type: string
-      type: object
     VictorOpsIntegration_allOf:
       properties:
         apiKey:
           type: string
         routingKey:
           type: string
-      type: object
     WebhookIntegration_allOf:
       properties:
         webhookUrls:
@@ -12209,27 +12196,22 @@ components:
           items:
             type: string
           type: array
-      type: object
     DynamicField_allOf:
       properties:
         value:
           $ref: '#/components/schemas/DynamicFieldValue'
-      type: object
     StaticBooleanField_allOf:
       properties:
         value:
           type: boolean
-      type: object
     StaticNumberField_allOf:
       properties:
         value:
           type: number
-      type: object
     StaticStringField_allOf:
       properties:
         value:
           type: string
-      type: object
     EntityVerificationRule_allOf:
       properties:
         matchingEntityType:
@@ -12250,12 +12232,10 @@ components:
         offlineDuration:
           format: int64
           type: integer
-      type: object
     SystemRule_allOf:
       properties:
         systemRuleId:
           type: string
-      type: object
     ThresholdRule_allOf:
       properties:
         metricName:
@@ -12289,7 +12269,6 @@ components:
         conditionValue:
           format: double
           type: number
-      type: object
     HistoricBaseline_allOf:
       properties:
         seasonality:
@@ -12306,7 +12285,6 @@ components:
         deviationFactor:
           format: double
           type: number
-      type: object
     SlownessWebsiteAlertRule_allOf:
       properties:
         aggregation:
@@ -12324,7 +12302,6 @@ components:
           - P99
           - DISTINCT_COUNT
           type: string
-      type: object
     SpecificJsErrorsWebsiteAlertRule_allOf:
       properties:
         operator:
@@ -12348,14 +12325,12 @@ components:
           type: string
         value:
           type: string
-      type: object
     StaticThreshold_allOf:
       properties:
         value:
           format: double
           minimum: 0
           type: number
-      type: object
     UserImpactWebsiteTimeThreshold_allOf:
       properties:
         users:
@@ -12369,7 +12344,6 @@ components:
           maximum: 1.0
           minimum: 0.0
           type: number
-      type: object
     ViolationsInPeriodWebsiteTimeThreshold_allOf:
       properties:
         violations:
@@ -12377,7 +12351,6 @@ components:
           maximum: 12
           minimum: 1
           type: integer
-      type: object
     ApplicationSliEntity_allOf:
       properties:
         applicationId:
@@ -12391,7 +12364,6 @@ components:
           - ALL
           - INBOUND
           type: string
-      type: object
     AvailabilitySliEntity_allOf:
       properties:
         applicationId:
@@ -12417,7 +12389,6 @@ components:
           maxItems: 32
           minItems: 1
           type: array
-      type: object
     InfrastructureSliEntity_allOf:
       properties:
         instanceAggregation:
@@ -12437,7 +12408,6 @@ components:
           type: string
         query:
           type: string
-      type: object
   securitySchemes:
     ApiKeyAuth:
       description: In order to use the REST API, you need to create an API token and

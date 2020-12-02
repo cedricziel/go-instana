@@ -12,44 +12,13 @@ Method | HTTP request | Description
 
 ## GetApplicationCatalogMetrics
 
-> []MetricDescription GetApplicationCatalogMetrics(ctx).Execute()
+> []MetricDescription GetApplicationCatalogMetrics(ctx, )
 
 Get Metric catalog
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationCatalogApi.GetApplicationCatalogMetrics(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationCatalogApi.GetApplicationCatalogMetrics``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetApplicationCatalogMetrics`: []MetricDescription
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationCatalogApi.GetApplicationCatalogMetrics`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetApplicationCatalogMetricsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -71,53 +40,28 @@ Other parameters are passed through a pointer to a apiGetApplicationCatalogMetri
 
 ## GetApplicationTagCatalog
 
-> TagCatalog GetApplicationTagCatalog(ctx).From(from).DataSource(dataSource).UseCase(useCase).Execute()
+> TagCatalog GetApplicationTagCatalog(ctx, optional)
 
 Get application tag catalog
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    from := int64(789) // int64 |  (optional)
-    dataSource := "dataSource_example" // string |  (optional)
-    useCase := "useCase_example" // string |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationCatalogApi.GetApplicationTagCatalog(context.Background()).From(from).DataSource(dataSource).UseCase(useCase).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationCatalogApi.GetApplicationTagCatalog``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetApplicationTagCatalog`: TagCatalog
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationCatalogApi.GetApplicationTagCatalog`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetApplicationTagCatalogRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **from** | **int64** |  | 
- **dataSource** | **string** |  | 
- **useCase** | **string** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***GetApplicationTagCatalogOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a GetApplicationTagCatalogOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **from** | **optional.Int64**|  | 
+ **dataSource** | **optional.String**|  | 
+ **useCase** | **optional.String**|  | 
 
 ### Return type
 
@@ -139,53 +83,28 @@ Name | Type | Description  | Notes
 
 ## GetApplicationTags
 
-> []Tag GetApplicationTags(ctx).From(from).DataSource(dataSource).UseCase(useCase).Execute()
+> []Tag GetApplicationTags(ctx, optional)
 
 Get application tags
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    from := int64(789) // int64 |  (optional)
-    dataSource := "dataSource_example" // string |  (optional)
-    useCase := "useCase_example" // string |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationCatalogApi.GetApplicationTags(context.Background()).From(from).DataSource(dataSource).UseCase(useCase).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationCatalogApi.GetApplicationTags``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetApplicationTags`: []Tag
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationCatalogApi.GetApplicationTags`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetApplicationTagsRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **from** | **int64** |  | 
- **dataSource** | **string** |  | 
- **useCase** | **string** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***GetApplicationTagsOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a GetApplicationTagsOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **from** | **optional.Int64**|  | 
+ **dataSource** | **optional.String**|  | 
+ **useCase** | **optional.String**|  | 
 
 ### Return type
 

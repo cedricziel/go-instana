@@ -20,51 +20,17 @@ Method | HTTP request | Description
 
 ## DeleteRole
 
-> DeleteRole(ctx, roleId).Execute()
+> DeleteRole(ctx, roleId)
 
 Delete role
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    roleId := "roleId_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.DeleteRole(context.Background(), roleId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.DeleteRole``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**roleId** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiDeleteRoleRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**roleId** | **string**|  | 
 
 ### Return type
 
@@ -86,44 +52,13 @@ Name | Type | Description  | Notes
 
 ## GetInvitations
 
-> []UserResult GetInvitations(ctx).Execute()
+> []UserResult GetInvitations(ctx, )
 
 All pending invitations
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.GetInvitations(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.GetInvitations``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetInvitations`: []UserResult
-    fmt.Fprintf(os.Stdout, "Response from `UserApi.GetInvitations`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetInvitationsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -145,53 +80,17 @@ Other parameters are passed through a pointer to a apiGetInvitationsRequest stru
 
 ## GetRole
 
-> Role GetRole(ctx, roleId).Execute()
+> Role GetRole(ctx, roleId)
 
 Role
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    roleId := "roleId_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.GetRole(context.Background(), roleId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.GetRole``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetRole`: Role
-    fmt.Fprintf(os.Stdout, "Response from `UserApi.GetRole`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**roleId** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetRoleRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**roleId** | **string**|  | 
 
 ### Return type
 
@@ -213,44 +112,13 @@ Name | Type | Description  | Notes
 
 ## GetRoles
 
-> []Role GetRoles(ctx).Execute()
+> []Role GetRoles(ctx, )
 
 All roles
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.GetRoles(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.GetRoles``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetRoles`: []Role
-    fmt.Fprintf(os.Stdout, "Response from `UserApi.GetRoles`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetRolesRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -272,44 +140,13 @@ Other parameters are passed through a pointer to a apiGetRolesRequest struct via
 
 ## GetUsers
 
-> []UserResult GetUsers(ctx).Execute()
+> []UserResult GetUsers(ctx, )
 
 All users (without invitations)
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.GetUsers(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.GetUsers``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetUsers`: []UserResult
-    fmt.Fprintf(os.Stdout, "Response from `UserApi.GetUsers`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetUsersRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -331,44 +168,13 @@ Other parameters are passed through a pointer to a apiGetUsersRequest struct via
 
 ## GetUsersIncludingInvitations
 
-> UsersResult GetUsersIncludingInvitations(ctx).Execute()
+> UsersResult GetUsersIncludingInvitations(ctx, )
 
 All users (incl. invitations)
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.GetUsersIncludingInvitations(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.GetUsersIncludingInvitations``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetUsersIncludingInvitations`: UsersResult
-    fmt.Fprintf(os.Stdout, "Response from `UserApi.GetUsersIncludingInvitations`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetUsersIncludingInvitationsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -390,55 +196,18 @@ Other parameters are passed through a pointer to a apiGetUsersIncludingInvitatio
 
 ## PutRole
 
-> Role PutRole(ctx, roleId).Role(role).Execute()
+> Role PutRole(ctx, roleId, role)
 
 Create or update role
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    roleId := "roleId_example" // string | 
-    role := *openapiclient.NewRole("Id_example", "Name_example") // Role | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.PutRole(context.Background(), roleId).Role(role).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.PutRole``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `PutRole`: Role
-    fmt.Fprintf(os.Stdout, "Response from `UserApi.PutRole`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**roleId** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiPutRoleRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
- **role** | [**Role**](Role.md) |  | 
+**roleId** | **string**|  | 
+**role** | [**Role**](Role.md)|  | 
 
 ### Return type
 
@@ -460,51 +229,17 @@ Name | Type | Description  | Notes
 
 ## RemoveUserFromTenant
 
-> RemoveUserFromTenant(ctx, userId).Execute()
+> RemoveUserFromTenant(ctx, userId)
 
 Remove user from tenant
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    userId := "userId_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.RemoveUserFromTenant(context.Background(), userId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.RemoveUserFromTenant``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**userId** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiRemoveUserFromTenantRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**userId** | **string**|  | 
 
 ### Return type
 
@@ -526,47 +261,26 @@ Name | Type | Description  | Notes
 
 ## RevokePendingInvitations
 
-> RevokePendingInvitations(ctx).Email(email).Execute()
+> RevokePendingInvitations(ctx, optional)
 
 Revoke pending invitation
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    email := "email_example" // string |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.RevokePendingInvitations(context.Background()).Email(email).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.RevokePendingInvitations``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiRevokePendingInvitationsRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **email** | **string** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***RevokePendingInvitationsOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a RevokePendingInvitationsOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **email** | **optional.String**|  | 
 
 ### Return type
 
@@ -588,49 +302,27 @@ Name | Type | Description  | Notes
 
 ## SendInvitation
 
-> SendInvitation(ctx).Email(email).RoleId(roleId).Execute()
+> SendInvitation(ctx, optional)
 
 Send user invitation
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    email := []string{"Inner_example"} // []string |  (optional)
-    roleId := []string{"Inner_example"} // []string |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.SendInvitation(context.Background()).Email(email).RoleId(roleId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.SendInvitation``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiSendInvitationRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **email** | **[]string** |  | 
- **roleId** | **[]string** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***SendInvitationOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a SendInvitationOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **email** | [**optional.Interface of []string**](string.md)|  | 
+ **roleId** | [**optional.Interface of []string**](string.md)|  | 
 
 ### Return type
 
@@ -652,53 +344,28 @@ Name | Type | Description  | Notes
 
 ## SetRole
 
-> SetRole(ctx, userId).RoleId(roleId).Execute()
+> SetRole(ctx, userId, optional)
 
 Add user to role
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    userId := "userId_example" // string | 
-    roleId := "roleId_example" // string |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.UserApi.SetRole(context.Background(), userId).RoleId(roleId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UserApi.SetRole``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**userId** | **string** |  | 
+**userId** | **string**|  | 
+ **optional** | ***SetRoleOpts** | optional parameters | nil if no parameters
 
-### Other Parameters
+### Optional Parameters
 
-Other parameters are passed through a pointer to a apiSetRoleRequest struct via the builder pattern
+Optional parameters are passed through a pointer to a SetRoleOpts struct
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
- **roleId** | **string** |  | 
+ **roleId** | **optional.String**|  | 
 
 ### Return type
 

@@ -26,49 +26,17 @@ Method | HTTP request | Description
 
 ## AddApplicationConfig
 
-> ApplicationConfig AddApplicationConfig(ctx).NewApplicationConfig(newApplicationConfig).Execute()
+> ApplicationConfig AddApplicationConfig(ctx, newApplicationConfig)
 
 Add application configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    newApplicationConfig := *openapiclient.NewNewApplicationConfig("Label_example", *openapiclient.NewMatchExpressionDTO(), "Scope_example", "BoundaryScope_example") // NewApplicationConfig | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.AddApplicationConfig(context.Background()).NewApplicationConfig(newApplicationConfig).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.AddApplicationConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AddApplicationConfig`: ApplicationConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.AddApplicationConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAddApplicationConfigRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **newApplicationConfig** | [**NewApplicationConfig**](NewApplicationConfig.md) |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**newApplicationConfig** | [**NewApplicationConfig**](NewApplicationConfig.md)|  | 
 
 ### Return type
 
@@ -90,49 +58,17 @@ Name | Type | Description  | Notes
 
 ## AddServiceConfig
 
-> ServiceConfig AddServiceConfig(ctx).ServiceConfig(serviceConfig).Execute()
+> ServiceConfig AddServiceConfig(ctx, serviceConfig)
 
 Add service configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    serviceConfig := *openapiclient.NewServiceConfig("Id_example", "Name_example", "Label_example", false, []openapiclient.ServiceMatchingRule{*openapiclient.NewServiceMatchingRule("Key_example", "Value_example")}) // ServiceConfig | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.AddServiceConfig(context.Background()).ServiceConfig(serviceConfig).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.AddServiceConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AddServiceConfig`: ServiceConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.AddServiceConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAddServiceConfigRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **serviceConfig** | [**ServiceConfig**](ServiceConfig.md) |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**serviceConfig** | [**ServiceConfig**](ServiceConfig.md)|  | 
 
 ### Return type
 
@@ -154,49 +90,17 @@ Name | Type | Description  | Notes
 
 ## CreateEndpointConfig
 
-> HttpEndpointConfig CreateEndpointConfig(ctx).HttpEndpointConfig(httpEndpointConfig).Execute()
+> HttpEndpointConfig CreateEndpointConfig(ctx, httpEndpointConfig)
 
 Create endpoint configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    httpEndpointConfig := *openapiclient.NewHttpEndpointConfig("ServiceId_example", []openapiclient.HttpEndpointRule{*openapiclient.NewHttpEndpointRule([]openapiclient.HttpPathSegmentMatchingRule{*openapiclient.NewHttpPathSegmentMatchingRule("Type_example")})}) // HttpEndpointConfig | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.CreateEndpointConfig(context.Background()).HttpEndpointConfig(httpEndpointConfig).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.CreateEndpointConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `CreateEndpointConfig`: HttpEndpointConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.CreateEndpointConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiCreateEndpointConfigRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **httpEndpointConfig** | [**HttpEndpointConfig**](HttpEndpointConfig.md) |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**httpEndpointConfig** | [**HttpEndpointConfig**](HttpEndpointConfig.md)|  | 
 
 ### Return type
 
@@ -218,51 +122,17 @@ Name | Type | Description  | Notes
 
 ## DeleteApplicationConfig
 
-> DeleteApplicationConfig(ctx, id).Execute()
+> DeleteApplicationConfig(ctx, id)
 
 Delete application configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.DeleteApplicationConfig(context.Background(), id).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.DeleteApplicationConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiDeleteApplicationConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**id** | **string**|  | 
 
 ### Return type
 
@@ -284,51 +154,17 @@ Name | Type | Description  | Notes
 
 ## DeleteEndpointConfig
 
-> DeleteEndpointConfig(ctx, id).Execute()
+> DeleteEndpointConfig(ctx, id)
 
 Delete endpoint configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.DeleteEndpointConfig(context.Background(), id).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.DeleteEndpointConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiDeleteEndpointConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**id** | **string**|  | 
 
 ### Return type
 
@@ -350,51 +186,17 @@ Name | Type | Description  | Notes
 
 ## DeleteServiceConfig
 
-> DeleteServiceConfig(ctx, id).Execute()
+> DeleteServiceConfig(ctx, id)
 
 Delete service configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.DeleteServiceConfig(context.Background(), id).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.DeleteServiceConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiDeleteServiceConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**id** | **string**|  | 
 
 ### Return type
 
@@ -416,53 +218,17 @@ Name | Type | Description  | Notes
 
 ## GetApplicationConfig
 
-> ApplicationConfig GetApplicationConfig(ctx, id).Execute()
+> ApplicationConfig GetApplicationConfig(ctx, id)
 
 Application configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.GetApplicationConfig(context.Background(), id).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.GetApplicationConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetApplicationConfig`: ApplicationConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.GetApplicationConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetApplicationConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**id** | **string**|  | 
 
 ### Return type
 
@@ -484,44 +250,13 @@ Name | Type | Description  | Notes
 
 ## GetApplicationConfigs
 
-> []ApplicationConfig GetApplicationConfigs(ctx).Execute()
+> []ApplicationConfig GetApplicationConfigs(ctx, )
 
 All Application configurations
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.GetApplicationConfigs(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.GetApplicationConfigs``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetApplicationConfigs`: []ApplicationConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.GetApplicationConfigs`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetApplicationConfigsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -543,53 +278,17 @@ Other parameters are passed through a pointer to a apiGetApplicationConfigsReque
 
 ## GetEndpointConfig
 
-> HttpEndpointConfig GetEndpointConfig(ctx, id).Execute()
+> HttpEndpointConfig GetEndpointConfig(ctx, id)
 
 Endpoint configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.GetEndpointConfig(context.Background(), id).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.GetEndpointConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetEndpointConfig`: HttpEndpointConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.GetEndpointConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetEndpointConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**id** | **string**|  | 
 
 ### Return type
 
@@ -611,44 +310,13 @@ Name | Type | Description  | Notes
 
 ## GetEndpointConfigs
 
-> []HttpEndpointConfig GetEndpointConfigs(ctx).Execute()
+> []HttpEndpointConfig GetEndpointConfigs(ctx, )
 
 All Endpoint configurations
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.GetEndpointConfigs(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.GetEndpointConfigs``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetEndpointConfigs`: []HttpEndpointConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.GetEndpointConfigs`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetEndpointConfigsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -670,53 +338,17 @@ Other parameters are passed through a pointer to a apiGetEndpointConfigsRequest 
 
 ## GetServiceConfig
 
-> ServiceConfig GetServiceConfig(ctx, id).Execute()
+> ServiceConfig GetServiceConfig(ctx, id)
 
 Service configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.GetServiceConfig(context.Background(), id).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.GetServiceConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetServiceConfig`: ServiceConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.GetServiceConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetServiceConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**id** | **string**|  | 
 
 ### Return type
 
@@ -738,44 +370,13 @@ Name | Type | Description  | Notes
 
 ## GetServiceConfigs
 
-> []ServiceConfig GetServiceConfigs(ctx).Execute()
+> []ServiceConfig GetServiceConfigs(ctx, )
 
 All service configurations
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.GetServiceConfigs(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.GetServiceConfigs``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetServiceConfigs`: []ServiceConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.GetServiceConfigs`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetServiceConfigsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -797,47 +398,17 @@ Other parameters are passed through a pointer to a apiGetServiceConfigsRequest s
 
 ## OrderServiceConfig
 
-> OrderServiceConfig(ctx).RequestBody(requestBody).Execute()
+> OrderServiceConfig(ctx, requestBody)
 
 Order of service configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    requestBody := []string{"Property_example"} // []string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.OrderServiceConfig(context.Background()).RequestBody(requestBody).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.OrderServiceConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiOrderServiceConfigRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **requestBody** | **[]string** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**requestBody** | [**[]string**](string.md)|  | 
 
 ### Return type
 
@@ -859,55 +430,18 @@ Name | Type | Description  | Notes
 
 ## PutApplicationConfig
 
-> ApplicationConfig PutApplicationConfig(ctx, id).ApplicationConfig(applicationConfig).Execute()
+> ApplicationConfig PutApplicationConfig(ctx, id, applicationConfig)
 
 Update application configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-    applicationConfig := *openapiclient.NewApplicationConfig("Id_example", "Label_example", *openapiclient.NewMatchExpressionDTO(), "Scope_example", "BoundaryScope_example") // ApplicationConfig | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.PutApplicationConfig(context.Background(), id).ApplicationConfig(applicationConfig).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.PutApplicationConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `PutApplicationConfig`: ApplicationConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.PutApplicationConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiPutApplicationConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
- **applicationConfig** | [**ApplicationConfig**](ApplicationConfig.md) |  | 
+**id** | **string**|  | 
+**applicationConfig** | [**ApplicationConfig**](ApplicationConfig.md)|  | 
 
 ### Return type
 
@@ -929,55 +463,18 @@ Name | Type | Description  | Notes
 
 ## PutServiceConfig
 
-> ServiceConfig PutServiceConfig(ctx, id).ServiceConfig(serviceConfig).Execute()
+> ServiceConfig PutServiceConfig(ctx, id, serviceConfig)
 
 Update service configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-    serviceConfig := *openapiclient.NewServiceConfig("Id_example", "Name_example", "Label_example", false, []openapiclient.ServiceMatchingRule{*openapiclient.NewServiceMatchingRule("Key_example", "Value_example")}) // ServiceConfig | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.PutServiceConfig(context.Background(), id).ServiceConfig(serviceConfig).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.PutServiceConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `PutServiceConfig`: ServiceConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.PutServiceConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiPutServiceConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
- **serviceConfig** | [**ServiceConfig**](ServiceConfig.md) |  | 
+**id** | **string**|  | 
+**serviceConfig** | [**ServiceConfig**](ServiceConfig.md)|  | 
 
 ### Return type
 
@@ -999,49 +496,17 @@ Name | Type | Description  | Notes
 
 ## ReplaceAll
 
-> []ServiceConfig ReplaceAll(ctx).ServiceConfig(serviceConfig).Execute()
+> []ServiceConfig ReplaceAll(ctx, serviceConfig)
 
 Replace all service configurations
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    serviceConfig := []openapiclient.ServiceConfig{*openapiclient.NewServiceConfig("Id_example", "Name_example", "Label_example", false, []openapiclient.ServiceMatchingRule{*openapiclient.NewServiceMatchingRule("Key_example", "Value_example")})} // []ServiceConfig | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.ReplaceAll(context.Background()).ServiceConfig(serviceConfig).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.ReplaceAll``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `ReplaceAll`: []ServiceConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.ReplaceAll`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiReplaceAllRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **serviceConfig** | [**[]ServiceConfig**](ServiceConfig.md) |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**serviceConfig** | [**[]ServiceConfig**](ServiceConfig.md)|  | 
 
 ### Return type
 
@@ -1063,55 +528,18 @@ Name | Type | Description  | Notes
 
 ## UpdateEndpointConfig
 
-> HttpEndpointConfig UpdateEndpointConfig(ctx, id).HttpEndpointConfig(httpEndpointConfig).Execute()
+> HttpEndpointConfig UpdateEndpointConfig(ctx, id, httpEndpointConfig)
 
 Update endpoint configuration
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    id := "id_example" // string | 
-    httpEndpointConfig := *openapiclient.NewHttpEndpointConfig("ServiceId_example", []openapiclient.HttpEndpointRule{*openapiclient.NewHttpEndpointRule([]openapiclient.HttpPathSegmentMatchingRule{*openapiclient.NewHttpPathSegmentMatchingRule("Type_example")})}) // HttpEndpointConfig | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.ApplicationSettingsApi.UpdateEndpointConfig(context.Background(), id).HttpEndpointConfig(httpEndpointConfig).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ApplicationSettingsApi.UpdateEndpointConfig``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `UpdateEndpointConfig`: HttpEndpointConfig
-    fmt.Fprintf(os.Stdout, "Response from `ApplicationSettingsApi.UpdateEndpointConfig`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**id** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiUpdateEndpointConfigRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
- **httpEndpointConfig** | [**HttpEndpointConfig**](HttpEndpointConfig.md) |  | 
+**id** | **string**|  | 
+**httpEndpointConfig** | [**HttpEndpointConfig**](HttpEndpointConfig.md)|  | 
 
 ### Return type
 

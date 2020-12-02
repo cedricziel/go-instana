@@ -16,49 +16,26 @@ Method | HTTP request | Description
 
 ## AddCustomDashboard
 
-> CustomDashboard AddCustomDashboard(ctx).CustomDashboard(customDashboard).Execute()
+> CustomDashboard AddCustomDashboard(ctx, optional)
 
 Add custom dashboard
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    customDashboard := *openapiclient.NewCustomDashboard("Id_example", "Title_example", []openapiclient.AccessRule{*openapiclient.NewAccessRule("AccessType_example", "RelationType_example")}, []openapiclient.Widget{*openapiclient.NewWidget("Id_example", "Title_example", "Type_example", interface{}(123))}) // CustomDashboard |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.CustomDashboardsApi.AddCustomDashboard(context.Background()).CustomDashboard(customDashboard).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CustomDashboardsApi.AddCustomDashboard``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AddCustomDashboard`: CustomDashboard
-    fmt.Fprintf(os.Stdout, "Response from `CustomDashboardsApi.AddCustomDashboard`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAddCustomDashboardRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **customDashboard** | [**CustomDashboard**](CustomDashboard.md) |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***AddCustomDashboardOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a AddCustomDashboardOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **customDashboard** | [**optional.Interface of CustomDashboard**](CustomDashboard.md)|  | 
 
 ### Return type
 
@@ -80,51 +57,17 @@ Name | Type | Description  | Notes
 
 ## DeleteCustomDashboard
 
-> DeleteCustomDashboard(ctx, customDashboardId).Execute()
+> DeleteCustomDashboard(ctx, customDashboardId)
 
 Remove custom dashboard
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    customDashboardId := "customDashboardId_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.CustomDashboardsApi.DeleteCustomDashboard(context.Background(), customDashboardId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CustomDashboardsApi.DeleteCustomDashboard``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**customDashboardId** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiDeleteCustomDashboardRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**customDashboardId** | **string**|  | 
 
 ### Return type
 
@@ -146,53 +89,17 @@ Name | Type | Description  | Notes
 
 ## GetCustomDashboard
 
-> CustomDashboard GetCustomDashboard(ctx, customDashboardId).Execute()
+> CustomDashboard GetCustomDashboard(ctx, customDashboardId)
 
 Get custom dashboard
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    customDashboardId := "customDashboardId_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.CustomDashboardsApi.GetCustomDashboard(context.Background(), customDashboardId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CustomDashboardsApi.GetCustomDashboard``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetCustomDashboard`: CustomDashboard
-    fmt.Fprintf(os.Stdout, "Response from `CustomDashboardsApi.GetCustomDashboard`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**customDashboardId** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetCustomDashboardRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**customDashboardId** | **string**|  | 
 
 ### Return type
 
@@ -214,44 +121,13 @@ Name | Type | Description  | Notes
 
 ## GetCustomDashboards
 
-> []CustomDashboard GetCustomDashboards(ctx).Execute()
+> []CustomDashboard GetCustomDashboards(ctx, )
 
 Get accessible custom dashboards
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.CustomDashboardsApi.GetCustomDashboards(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CustomDashboardsApi.GetCustomDashboards``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetCustomDashboards`: []CustomDashboard
-    fmt.Fprintf(os.Stdout, "Response from `CustomDashboardsApi.GetCustomDashboards`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetCustomDashboardsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -273,44 +149,13 @@ Other parameters are passed through a pointer to a apiGetCustomDashboardsRequest
 
 ## GetShareableApiTokens
 
-> []ApiToken GetShareableApiTokens(ctx).Execute()
+> []ApiToken GetShareableApiTokens(ctx, )
 
 Get all API tokens.
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.CustomDashboardsApi.GetShareableApiTokens(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CustomDashboardsApi.GetShareableApiTokens``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetShareableApiTokens`: []ApiToken
-    fmt.Fprintf(os.Stdout, "Response from `CustomDashboardsApi.GetShareableApiTokens`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetShareableApiTokensRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -332,44 +177,13 @@ Other parameters are passed through a pointer to a apiGetShareableApiTokensReque
 
 ## GetShareableUsers
 
-> []UserResult GetShareableUsers(ctx).Execute()
+> []UserResult GetShareableUsers(ctx, )
 
 Get all users (without invitations).
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.CustomDashboardsApi.GetShareableUsers(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CustomDashboardsApi.GetShareableUsers``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetShareableUsers`: []UserResult
-    fmt.Fprintf(os.Stdout, "Response from `CustomDashboardsApi.GetShareableUsers`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetShareableUsersRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -391,55 +205,28 @@ Other parameters are passed through a pointer to a apiGetShareableUsersRequest s
 
 ## UpdateCustomDashboard
 
-> CustomDashboard UpdateCustomDashboard(ctx, customDashboardId).CustomDashboard(customDashboard).Execute()
+> CustomDashboard UpdateCustomDashboard(ctx, customDashboardId, optional)
 
 Update custom dashboard
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    customDashboardId := "customDashboardId_example" // string | 
-    customDashboard := *openapiclient.NewCustomDashboard("Id_example", "Title_example", []openapiclient.AccessRule{*openapiclient.NewAccessRule("AccessType_example", "RelationType_example")}, []openapiclient.Widget{*openapiclient.NewWidget("Id_example", "Title_example", "Type_example", interface{}(123))}) // CustomDashboard |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.CustomDashboardsApi.UpdateCustomDashboard(context.Background(), customDashboardId).CustomDashboard(customDashboard).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CustomDashboardsApi.UpdateCustomDashboard``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `UpdateCustomDashboard`: CustomDashboard
-    fmt.Fprintf(os.Stdout, "Response from `CustomDashboardsApi.UpdateCustomDashboard`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**customDashboardId** | **string** |  | 
+**customDashboardId** | **string**|  | 
+ **optional** | ***UpdateCustomDashboardOpts** | optional parameters | nil if no parameters
 
-### Other Parameters
+### Optional Parameters
 
-Other parameters are passed through a pointer to a apiUpdateCustomDashboardRequest struct via the builder pattern
+Optional parameters are passed through a pointer to a UpdateCustomDashboardOpts struct
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
- **customDashboard** | [**CustomDashboard**](CustomDashboard.md) |  | 
+ **customDashboard** | [**optional.Interface of CustomDashboard**](CustomDashboard.md)|  | 
 
 ### Return type
 

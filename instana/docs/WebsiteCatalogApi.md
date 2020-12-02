@@ -12,44 +12,13 @@ Method | HTTP request | Description
 
 ## GetWebsiteCatalogMetrics
 
-> []WebsiteMonitoringMetricDescription GetWebsiteCatalogMetrics(ctx).Execute()
+> []WebsiteMonitoringMetricDescription GetWebsiteCatalogMetrics(ctx, )
 
 Metric catalog
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.WebsiteCatalogApi.GetWebsiteCatalogMetrics(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `WebsiteCatalogApi.GetWebsiteCatalogMetrics``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetWebsiteCatalogMetrics`: []WebsiteMonitoringMetricDescription
-    fmt.Fprintf(os.Stdout, "Response from `WebsiteCatalogApi.GetWebsiteCatalogMetrics`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetWebsiteCatalogMetricsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -71,44 +40,13 @@ Other parameters are passed through a pointer to a apiGetWebsiteCatalogMetricsRe
 
 ## GetWebsiteCatalogTags
 
-> []Tag GetWebsiteCatalogTags(ctx).Execute()
+> []Tag GetWebsiteCatalogTags(ctx, )
 
 Get all existing website tags
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.WebsiteCatalogApi.GetWebsiteCatalogTags(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `WebsiteCatalogApi.GetWebsiteCatalogTags``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetWebsiteCatalogTags`: []Tag
-    fmt.Fprintf(os.Stdout, "Response from `WebsiteCatalogApi.GetWebsiteCatalogTags`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetWebsiteCatalogTagsRequest struct via the builder pattern
-
 
 ### Return type
 
@@ -130,51 +68,18 @@ Other parameters are passed through a pointer to a apiGetWebsiteCatalogTagsReque
 
 ## GetWebsiteTagCatalog
 
-> TagCatalog GetWebsiteTagCatalog(ctx).BeaconType(beaconType).UseCase(useCase).Execute()
+> TagCatalog GetWebsiteTagCatalog(ctx, beaconType, useCase)
 
 Get website tag catalog
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    beaconType := "beaconType_example" // string | 
-    useCase := "useCase_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.WebsiteCatalogApi.GetWebsiteTagCatalog(context.Background()).BeaconType(beaconType).UseCase(useCase).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `WebsiteCatalogApi.GetWebsiteTagCatalog``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetWebsiteTagCatalog`: TagCatalog
-    fmt.Fprintf(os.Stdout, "Response from `WebsiteCatalogApi.GetWebsiteTagCatalog`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetWebsiteTagCatalogRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **beaconType** | **string** |  | 
- **useCase** | **string** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**beaconType** | **string**|  | 
+**useCase** | **string**|  | 
 
 ### Return type
 

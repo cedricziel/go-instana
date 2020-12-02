@@ -11,51 +11,27 @@ Method | HTTP request | Description
 
 ## GetBeaconGroups
 
-> BeaconGroupsResult GetBeaconGroups(ctx).FillTimeSeries(fillTimeSeries).GetWebsiteBeaconGroups(getWebsiteBeaconGroups).Execute()
+> BeaconGroupsResult GetBeaconGroups(ctx, optional)
 
 Get grouped beacon metrics
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    fillTimeSeries := true // bool |  (optional)
-    getWebsiteBeaconGroups := *openapiclient.NewGetWebsiteBeaconGroups(*openapiclient.NewWebsiteBeaconTagGroup("GroupbyTag_example", "GroupbyTagEntity_example"), "Type_example", []openapiclient.WebsiteMonitoringMetricsConfiguration{*openapiclient.NewWebsiteMonitoringMetricsConfiguration("Metric_example", "Aggregation_example")}) // GetWebsiteBeaconGroups |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.WebsiteAnalyzeApi.GetBeaconGroups(context.Background()).FillTimeSeries(fillTimeSeries).GetWebsiteBeaconGroups(getWebsiteBeaconGroups).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `WebsiteAnalyzeApi.GetBeaconGroups``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetBeaconGroups`: BeaconGroupsResult
-    fmt.Fprintf(os.Stdout, "Response from `WebsiteAnalyzeApi.GetBeaconGroups`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetBeaconGroupsRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **fillTimeSeries** | **bool** |  | 
- **getWebsiteBeaconGroups** | [**GetWebsiteBeaconGroups**](GetWebsiteBeaconGroups.md) |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***GetBeaconGroupsOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a GetBeaconGroupsOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **fillTimeSeries** | **optional.Bool**|  | 
+ **getWebsiteBeaconGroups** | [**optional.Interface of GetWebsiteBeaconGroups**](GetWebsiteBeaconGroups.md)|  | 
 
 ### Return type
 
@@ -77,49 +53,26 @@ Name | Type | Description  | Notes
 
 ## GetBeacons
 
-> BeaconResult GetBeacons(ctx).GetWebsiteBeacons(getWebsiteBeacons).Execute()
+> BeaconResult GetBeacons(ctx, optional)
 
 Get all beacons
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    getWebsiteBeacons := *openapiclient.NewGetWebsiteBeacons("Type_example") // GetWebsiteBeacons |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.WebsiteAnalyzeApi.GetBeacons(context.Background()).GetWebsiteBeacons(getWebsiteBeacons).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `WebsiteAnalyzeApi.GetBeacons``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetBeacons`: BeaconResult
-    fmt.Fprintf(os.Stdout, "Response from `WebsiteAnalyzeApi.GetBeacons`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetBeaconsRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **getWebsiteBeacons** | [**GetWebsiteBeacons**](GetWebsiteBeacons.md) |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***GetBeaconsOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a GetBeaconsOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **getWebsiteBeacons** | [**optional.Interface of GetWebsiteBeacons**](GetWebsiteBeacons.md)|  | 
 
 ### Return type
 

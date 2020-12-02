@@ -11,53 +11,17 @@ Method | HTTP request | Description
 
 ## GetEvent
 
-> EventResult GetEvent(ctx, eventId).Execute()
+> EventResult GetEvent(ctx, eventId)
 
 Get Event
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    eventId := "eventId_example" // string | 
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.EventsApi.GetEvent(context.Background(), eventId).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `EventsApi.GetEvent``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetEvent`: EventResult
-    fmt.Fprintf(os.Stdout, "Response from `EventsApi.GetEvent`: %v\n", resp)
-}
-```
-
-### Path Parameters
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**eventId** | **string** |  | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetEventRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
+**eventId** | **string**|  | 
 
 ### Return type
 
@@ -79,55 +43,29 @@ Name | Type | Description  | Notes
 
 ## GetEvents
 
-> []EventResult GetEvents(ctx).WindowSize(windowSize).From(from).To(to).ExcludeTriggeredBefore(excludeTriggeredBefore).Execute()
+> []EventResult GetEvents(ctx, optional)
 
 Get alerts
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    windowSize := int64(789) // int64 |  (optional)
-    from := int64(789) // int64 |  (optional)
-    to := int64(789) // int64 |  (optional)
-    excludeTriggeredBefore := true // bool |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.EventsApi.GetEvents(context.Background()).WindowSize(windowSize).From(from).To(to).ExcludeTriggeredBefore(excludeTriggeredBefore).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `EventsApi.GetEvents``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetEvents`: []EventResult
-    fmt.Fprintf(os.Stdout, "Response from `EventsApi.GetEvents`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetEventsRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **windowSize** | **int64** |  | 
- **from** | **int64** |  | 
- **to** | **int64** |  | 
- **excludeTriggeredBefore** | **bool** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***GetEventsOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a GetEventsOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **windowSize** | **optional.Int64**|  | 
+ **from** | **optional.Int64**|  | 
+ **to** | **optional.Int64**|  | 
+ **excludeTriggeredBefore** | **optional.Bool**|  | 
 
 ### Return type
 

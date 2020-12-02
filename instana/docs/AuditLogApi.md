@@ -10,53 +10,28 @@ Method | HTTP request | Description
 
 ## GetAuditLogs
 
-> AuditLogResponse GetAuditLogs(ctx).Offset(offset).Query(query).PageSize(pageSize).Execute()
+> AuditLogResponse GetAuditLogs(ctx, optional)
 
 Audit log
 
-### Example
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
-)
-
-func main() {
-    offset := int32(56) // int32 |  (optional)
-    query := "query_example" // string |  (optional)
-    pageSize := int32(56) // int32 |  (optional)
-
-    configuration := openapiclient.NewConfiguration()
-    api_client := openapiclient.NewAPIClient(configuration)
-    resp, r, err := api_client.AuditLogApi.GetAuditLogs(context.Background()).Offset(offset).Query(query).PageSize(pageSize).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `AuditLogApi.GetAuditLogs``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetAuditLogs`: AuditLogResponse
-    fmt.Fprintf(os.Stdout, "Response from `AuditLogApi.GetAuditLogs`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetAuditLogsRequest struct via the builder pattern
+### Required Parameters
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **offset** | **int32** |  | 
- **query** | **string** |  | 
- **pageSize** | **int32** |  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+ **optional** | ***GetAuditLogsOpts** | optional parameters | nil if no parameters
+
+### Optional Parameters
+
+Optional parameters are passed through a pointer to a GetAuditLogsOpts struct
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **offset** | **optional.Int32**|  | 
+ **query** | **optional.String**|  | 
+ **pageSize** | **optional.Int32**|  | 
 
 ### Return type
 
