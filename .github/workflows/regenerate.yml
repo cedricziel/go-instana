@@ -1,0 +1,50 @@
+name: Regenerate Client
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 8 * * *'
+
+env:
+  GO_POST_PROCESS_FILE: "gofmt -s -w"
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout your code
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.14'
+
+      - run: wget https://instana.github.io/openapi/openapi.yaml -O resources/openapi.yaml
+
+      - id: getApiVersion
+        name: Get API Version
+        uses: mikefarah/yq@v4.18.1
+        with:
+          cmd: yq '.info.version' resources/openapi.yaml
+
+      - id: setPackageVersion
+        name: Set Package Version
+        uses: mikefarah/yq@v4.18.1
+        with:
+          cmd: yq -i '.additionalProperties.packageVersion = "${{ steps.getApiVersion.outputs.result }}"' openapi-go.yml
+
+      - name: Generate Client Library w/ the OpenAPITools Generator
+        uses: openapi-generators/openapitools-generator-action@v1.2.0
+        with:
+          generator: go
+          openapi-file: resources/openapi.yaml
+          generator-tag: v5.4.0
+          config-file: openapi-go.yml
+          command-args: "-o instana --git-repo-id go-instana --git-user-id cedricziel --type-mappings=object=interface{} --enable-post-process-file --skip-validate-spec"
+
+      - run: git diff

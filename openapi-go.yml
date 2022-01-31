@@ -1,0 +1,5 @@
+# templateDir: my_custom_templates
+additionalProperties:
+  packageName: instana
+  isGoSubmodule: true
+  packageVersion: $version
